@@ -13,42 +13,43 @@
     }
 
     header {
-      background: #0f172a;
+      background: #111827;
       color: white;
       text-align: center;
       padding: 20px;
-      font-size: 32px;
+      font-size: 30px;
       font-weight: bold;
     }
 
     .container {
+      display: flex;
+      justify-content: center;
       padding: 20px;
     }
 
-    .japan-map {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-      gap: 10px;
+    svg {
+      width: 100%;
+      max-width: 900px;
+      height: auto;
     }
 
     .prefecture {
-      background: white;
-      border: 2px solid #d1d5db;
-      border-radius: 14px;
-      padding: 20px 10px;
-      text-align: center;
+      fill: white;
+      stroke: #333;
+      stroke-width: 2;
       cursor: pointer;
       transition: 0.2s;
-      font-weight: bold;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .prefecture:hover {
-      transform: translateY(-2px);
+      opacity: 0.8;
     }
 
-    .pref-name {
-      font-size: 16px;
+    .label {
+      font-size: 10px;
+      pointer-events: none;
+      text-anchor: middle;
+      fill: #111;
     }
 
     .modal {
@@ -83,7 +84,7 @@
       background: #ef4444;
       color: white;
       border: none;
-      padding: 10px 14px;
+      padding: 10px 16px;
       border-radius: 10px;
       cursor: pointer;
     }
@@ -97,7 +98,6 @@
 
     .album-create input[type="text"] {
       flex: 1;
-      min-width: 200px;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid #ccc;
@@ -120,12 +120,6 @@
       background: #fafafa;
     }
 
-    .album-title {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -133,45 +127,14 @@
       margin-top: 10px;
     }
 
-    .photo-card {
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    }
-
     .photo-card img {
       width: 100%;
       height: 140px;
       object-fit: cover;
-    }
-
-    .photo-actions {
-      padding: 8px;
-    }
-
-    .delete-btn {
-      width: 100%;
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 8px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    @media (max-width: 600px) {
-      .japan-map {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      header {
-        font-size: 24px;
-      }
+      border-radius: 10px;
     }
   </style>
 </head>
-
 <body>
 
 <header>
@@ -179,7 +142,56 @@
 </header>
 
 <div class="container">
-  <div id="japanMap" class="japan-map"></div>
+
+<svg viewBox="0 0 900 700" id="japanMap">
+
+  <g data-pref="北海道">
+    <rect class="prefecture" x="650" y="40" width="140" height="80"></rect>
+    <text class="label" x="720" y="85">北海道</text>
+  </g>
+
+  <g data-pref="青森県">
+    <rect class="prefecture" x="620" y="150" width="80" height="40"></rect>
+    <text class="label" x="660" y="175">青森</text>
+  </g>
+
+  <g data-pref="岩手県">
+    <rect class="prefecture" x="710" y="150" width="80" height="40"></rect>
+    <text class="label" x="750" y="175">岩手</text>
+  </g>
+
+  <g data-pref="東京都">
+    <rect class="prefecture" x="540" y="320" width="80" height="40"></rect>
+    <text class="label" x="580" y="345">東京</text>
+  </g>
+
+  <g data-pref="愛知県">
+    <rect class="prefecture" x="450" y="400" width="80" height="40"></rect>
+    <text class="label" x="490" y="425">愛知</text>
+  </g>
+
+  <g data-pref="大阪府">
+    <rect class="prefecture" x="360" y="450" width="80" height="40"></rect>
+    <text class="label" x="400" y="475">大阪</text>
+  </g>
+
+  <g data-pref="広島県">
+    <rect class="prefecture" x="250" y="470" width="80" height="40"></rect>
+    <text class="label" x="290" y="495">広島</text>
+  </g>
+
+  <g data-pref="福岡県">
+    <rect class="prefecture" x="120" y="520" width="80" height="40"></rect>
+    <text class="label" x="160" y="545">福岡</text>
+  </g>
+
+  <g data-pref="沖縄県">
+    <rect class="prefecture" x="80" y="640" width="80" height="40"></rect>
+    <text class="label" x="120" y="665">沖縄</text>
+  </g>
+
+</svg>
+
 </div>
 
 <div class="modal" id="modal">
@@ -203,19 +215,6 @@
 
 <script>
 
-const prefectures = [
-  '北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県',
-  '茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県',
-  '新潟県','富山県','石川県','福井県','山梨県','長野県',
-  '岐阜県','静岡県','愛知県','三重県',
-  '滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県',
-  '鳥取県','島根県','岡山県','広島県','山口県',
-  '徳島県','香川県','愛媛県','高知県',
-  '福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県',
-  '沖縄県'
-];
-
-const japanMap = document.getElementById('japanMap');
 const modal = document.getElementById('modal');
 const modalTitle = document.getElementById('modalTitle');
 const albumList = document.getElementById('albumList');
@@ -234,28 +233,19 @@ function renderMap() {
 
   const data = getData();
 
-  japanMap.innerHTML = '';
+  document.querySelectorAll('g[data-pref]').forEach(group => {
 
-  prefectures.forEach(pref => {
+    const pref = group.dataset.pref;
+
+    const rect = group.querySelector('.prefecture');
 
     const albums = data[pref] || [];
 
-    const card = document.createElement('div');
-
-    card.className = 'prefecture';
-
     if (albums.length > 0) {
-      card.style.background = albums[albums.length - 1].color;
-      card.style.color = 'white';
+      rect.style.fill = albums[albums.length - 1].color;
+    } else {
+      rect.style.fill = 'white';
     }
-
-    card.innerHTML = `
-      <div class="pref-name">${pref}</div>
-    `;
-
-    card.onclick = () => openModal(pref);
-
-    japanMap.appendChild(card);
 
   });
 
@@ -274,9 +264,7 @@ function openModal(pref) {
 }
 
 function closeModal() {
-
   modal.style.display = 'none';
-
 }
 
 function createAlbum() {
@@ -294,13 +282,6 @@ function createAlbum() {
 
   if (!data[currentPrefecture]) {
     data[currentPrefecture] = [];
-  }
-
-  const exists = data[currentPrefecture].some(a => a.name === name);
-
-  if (exists) {
-    alert('同じアルバム名があります');
-    return;
   }
 
   data[currentPrefecture].push({
@@ -327,11 +308,6 @@ function renderAlbums() {
 
   albumList.innerHTML = '';
 
-  if (albums.length === 0) {
-    albumList.innerHTML = '<p>アルバムがありません</p>';
-    return;
-  }
-
   albums.forEach((album, albumIndex) => {
 
     const card = document.createElement('div');
@@ -339,26 +315,14 @@ function renderAlbums() {
     card.className = 'album-card';
 
     card.innerHTML = `
-      <div class="album-title">${album.name}</div>
+      <h3>${album.name}</h3>
 
       <p>
         色：
-        <span style="
-          display:inline-block;
-          width:20px;
-          height:20px;
-          background:${album.color};
-          border-radius:50%;
-          vertical-align:middle;
-        "></span>
+        <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${album.color}"></span>
       </p>
 
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onchange="uploadPhotos(${albumIndex}, event)"
-      >
+      <input type="file" multiple accept="image/*" onchange="uploadPhotos(${albumIndex}, event)">
 
       <div class="gallery" id="gallery-${albumIndex}"></div>
     `;
@@ -369,24 +333,16 @@ function renderAlbums() {
 
     album.photos.forEach((photo, photoIndex) => {
 
-      const photoCard = document.createElement('div');
+      const img = document.createElement('div');
 
-      photoCard.className = 'photo-card';
+      img.className = 'photo-card';
 
-      photoCard.innerHTML = `
+      img.innerHTML = `
         <img src="${photo}">
-
-        <div class="photo-actions">
-          <button
-            class="delete-btn"
-            onclick="deletePhoto(${albumIndex}, ${photoIndex})"
-          >
-            削除
-          </button>
-        </div>
+        <button onclick="deletePhoto(${albumIndex}, ${photoIndex})">削除</button>
       `;
 
-      gallery.appendChild(photoCard);
+      gallery.appendChild(img);
 
     });
 
@@ -443,12 +399,20 @@ function deletePhoto(albumIndex, photoIndex) {
 window.onclick = e => {
 
   if (e.target === modal) {
-
     closeModal();
-
   }
 
 };
+
+document.querySelectorAll('g[data-pref]').forEach(group => {
+
+  group.addEventListener('click', () => {
+
+    openModal(group.dataset.pref);
+
+  });
+
+});
 
 renderMap();
 
