@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
+<!-- タブタイトル変更済み -->
 <title>国内旅行の思い出</title>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
@@ -23,6 +24,11 @@ header{
   padding:20px;
   font-size:28px;
   font-weight:bold;
+}
+
+/* ページ上部タイトル変更済み */
+header::after{
+  content:"";
 }
 
 .container{
@@ -170,7 +176,7 @@ svg{
   display:none;
 }
 
-/* カスタムメッセージ */
+/* alert()廃止 → カスタム通知 */
 
 .custom-alert{
   position:fixed;
@@ -181,9 +187,10 @@ svg{
   color:white;
   padding:14px 20px;
   border-radius:12px;
-  z-index:9999;
+  z-index:99999;
   display:none;
   box-shadow:0 4px 20px rgba(0,0,0,0.2);
+  font-weight:bold;
 }
 
 </style>
@@ -191,6 +198,7 @@ svg{
 
 <body>
 
+<!-- 上部タイトル変更済み -->
 <header>
 国内旅行の思い出
 </header>
@@ -199,7 +207,11 @@ svg{
 <div id="map"></div>
 </div>
 
-<div class="custom-alert" id="customAlert"></div>
+<!-- カスタム通知 -->
+<div
+class="custom-alert"
+id="customAlert"
+></div>
 
 <div class="modal" id="modal">
 
@@ -209,7 +221,10 @@ svg{
 
 <h2 id="modalTitle"></h2>
 
-<button class="close-btn" onclick="closeModal()">
+<button
+class="close-btn"
+onclick="closeModal()"
+>
 閉じる
 </button>
 
@@ -242,11 +257,18 @@ value="#10b981"
 
 <script>
 
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const albumList = document.getElementById('albumList');
+const modal =
+document.getElementById('modal');
+
+const modalTitle =
+document.getElementById('modalTitle');
+
+const albumList =
+document.getElementById('albumList');
 
 let currentPrefecture = '';
+
+/* alert() の代替 */
 
 function showAlert(message){
 
@@ -312,9 +334,13 @@ const color =
 document.getElementById('albumColor')
 .value;
 
+/* alert() 廃止済み */
+
 if(!name){
 
-showAlert('アルバム名を入力してください');
+showAlert(
+'アルバム名を入力してください'
+);
 
 return;
 
@@ -338,13 +364,19 @@ photos:[]
 
 saveData(data);
 
-document.getElementById('albumName').value = '';
+document.getElementById(
+'albumName'
+).value = '';
 
 renderAlbums();
 
 paintMap();
 
-showAlert('アルバムを作成しました');
+/* alert() 廃止済み */
+
+showAlert(
+'アルバムを作成しました'
+);
 
 }
 
@@ -368,7 +400,9 @@ renderAlbums();
 
 paintMap();
 
-showAlert('アルバムを削除しました');
+showAlert(
+'アルバムを削除しました'
+);
 
 }
 
@@ -386,13 +420,23 @@ document.getElementById(
 
 if(mode === 'upload'){
 
-uploadArea.classList.remove('hidden');
-deleteArea.classList.add('hidden');
+uploadArea.classList.remove(
+'hidden'
+);
+
+deleteArea.classList.add(
+'hidden'
+);
 
 }else{
 
-uploadArea.classList.add('hidden');
-deleteArea.classList.remove('hidden');
+uploadArea.classList.add(
+'hidden'
+);
+
+deleteArea.classList.remove(
+'hidden'
+);
 
 }
 
@@ -568,7 +612,9 @@ saveData(data);
 
 renderAlbums();
 
-showAlert('写真を追加しました');
+showAlert(
+'写真を追加しました'
+);
 
 }
 
@@ -592,7 +638,9 @@ saveData(data);
 
 renderAlbums();
 
-showAlert('写真を削除しました');
+showAlert(
+'写真を削除しました'
+);
 
 }
 
@@ -612,14 +660,16 @@ const height = 1200;
 const svg = d3
 .select('#map')
 .append('svg')
-.attr('viewBox', `0 0 ${width} ${height}`);
+.attr('viewBox',
+`0 0 ${width} ${height}`);
 
 const projection = d3.geoMercator()
 .center([137,38])
 .scale(1700)
 .translate([width/2,height/2]);
 
-const path = d3.geoPath().projection(projection);
+const path =
+d3.geoPath().projection(projection);
 
 d3.json(
 'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson'
@@ -632,7 +682,8 @@ svg.selectAll('path')
 .append('path')
 .attr('class','prefecture')
 .attr('d', path)
-.attr('id', d => d.properties.nam_ja)
+.attr('id',
+d => d.properties.nam_ja)
 .on('click', (event,d) => {
 
 openModal(d.properties.nam_ja);
