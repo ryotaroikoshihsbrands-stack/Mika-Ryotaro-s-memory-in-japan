@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-<title>日本アルバムマップ</title>
+<title>国内旅行の思い出</title>
 
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 
@@ -170,18 +170,36 @@ svg{
   display:none;
 }
 
+/* カスタムメッセージ */
+
+.custom-alert{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#111827;
+  color:white;
+  padding:14px 20px;
+  border-radius:12px;
+  z-index:9999;
+  display:none;
+  box-shadow:0 4px 20px rgba(0,0,0,0.2);
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
-日本アルバムマップ
+国内旅行の思い出
 </header>
 
 <div class="container">
 <div id="map"></div>
 </div>
+
+<div class="custom-alert" id="customAlert"></div>
 
 <div class="modal" id="modal">
 
@@ -229,6 +247,23 @@ const modalTitle = document.getElementById('modalTitle');
 const albumList = document.getElementById('albumList');
 
 let currentPrefecture = '';
+
+function showAlert(message){
+
+const alertBox =
+document.getElementById('customAlert');
+
+alertBox.innerText = message;
+
+alertBox.style.display = 'block';
+
+setTimeout(() => {
+
+alertBox.style.display = 'none';
+
+}, 2500);
+
+}
 
 function getData(){
 
@@ -279,7 +314,7 @@ document.getElementById('albumColor')
 
 if(!name){
 
-alert('アルバム名を入力してください');
+showAlert('アルバム名を入力してください');
 
 return;
 
@@ -309,15 +344,16 @@ renderAlbums();
 
 paintMap();
 
+showAlert('アルバムを作成しました');
+
 }
 
 function deleteAlbum(albumIndex){
 
-const confirmDelete = confirm(
-'このアルバムを削除しますか？'
-);
+const result =
+confirm('このアルバムを削除しますか？');
 
-if(!confirmDelete){
+if(!result){
 return;
 }
 
@@ -331,6 +367,8 @@ saveData(data);
 renderAlbums();
 
 paintMap();
+
+showAlert('アルバムを削除しました');
 
 }
 
@@ -530,6 +568,8 @@ saveData(data);
 
 renderAlbums();
 
+showAlert('写真を追加しました');
+
 }
 
 };
@@ -551,6 +591,8 @@ data[currentPrefecture][albumIndex]
 saveData(data);
 
 renderAlbums();
+
+showAlert('写真を削除しました');
 
 }
 
