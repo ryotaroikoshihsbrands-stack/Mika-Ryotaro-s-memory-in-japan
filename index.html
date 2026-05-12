@@ -170,7 +170,7 @@ svg{
   display:none;
 }
 
-/* カスタム通知 */
+/* 通知 */
 
 .custom-alert{
   position:fixed;
@@ -185,6 +185,50 @@ svg{
   display:none;
   box-shadow:0 4px 20px rgba(0,0,0,0.2);
   font-weight:bold;
+}
+
+/* 独自確認モーダル */
+
+.confirm-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.5);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:100000;
+}
+
+.confirm-box{
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  width:90%;
+  max-width:400px;
+  text-align:center;
+}
+
+.confirm-buttons{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.confirm-buttons button{
+  border:none;
+  padding:10px 20px;
+  border-radius:10px;
+  cursor:pointer;
+  color:white;
+}
+
+.confirm-yes{
+  background:#ef4444;
+}
+
+.confirm-no{
+  background:#6b7280;
 }
 
 </style>
@@ -204,6 +248,44 @@ svg{
 class="custom-alert"
 id="customAlert"
 ></div>
+
+<!-- 独自confirm -->
+
+<div
+class="confirm-overlay"
+id="confirmOverlay"
+>
+
+<div class="confirm-box">
+
+<p id="confirmMessage">
+削除しますか？
+</p>
+
+<div class="confirm-buttons">
+
+<button
+class="confirm-yes"
+id="confirmYes"
+>
+
+削除
+
+</button>
+
+<button
+class="confirm-no"
+onclick="closeConfirm()"
+>
+
+キャンセル
+
+</button>
+
+</div>
+
+</div>
+</div>
 
 <div class="modal" id="modal">
 
@@ -249,19 +331,6 @@ value="#10b981"
 
 <script>
 
-/* =========================
-   alert / confirm 完全無効化
-========================= */
-
-window.alert = function(){};
-window.confirm = function(){
-  return true;
-};
-
-/* =========================
-   要素取得
-========================= */
-
 const modal =
 document.getElementById('modal');
 
@@ -271,11 +340,18 @@ document.getElementById('modalTitle');
 const albumList =
 document.getElementById('albumList');
 
+const confirmOverlay =
+document.getElementById('confirmOverlay');
+
+const confirmYes =
+document.getElementById('confirmYes');
+
 let currentPrefecture = '';
 
-/* =========================
-   カスタム通知
-========================= */
+window.alert = function(){};
+window.confirm = function(){ return true; };
+
+/* 通知 */
 
 function showAlert(message){
 
@@ -294,9 +370,31 @@ alertBox.style.display = 'none';
 
 }
 
-/* =========================
-   localStorage
-========================= */
+/* 独自confirm */
+
+function openConfirm(message, callback){
+
+document.getElementById(
+'confirmMessage'
+).innerText = message;
+
+confirmOverlay.style.display = 'flex';
+
+confirmYes.onclick = function(){
+
+callback();
+
+closeConfirm();
+
+};
+
+}
+
+function closeConfirm(){
+
+confirmOverlay.style.display = 'none';
+
+}
 
 function getData(){
 
@@ -314,10 +412,6 @@ JSON.stringify(data)
 );
 
 }
-
-/* =========================
-   モーダル
-========================= */
 
 function openModal(pref){
 
@@ -337,10 +431,6 @@ function closeModal(){
 modal.style.display = 'none';
 
 }
-
-/* =========================
-   アルバム作成
-========================= */
 
 function createAlbum(){
 
@@ -395,11 +485,11 @@ showAlert(
 
 }
 
-/* =========================
-   アルバム削除
-========================= */
-
 function deleteAlbum(albumIndex){
+
+openConfirm(
+'このアルバムを削除しますか？',
+function(){
 
 const data = getData();
 
@@ -417,10 +507,9 @@ showAlert(
 );
 
 }
+);
 
-/* =========================
-   ラジオ切替
-========================= */
+}
 
 function toggleAlbumMode(albumIndex, mode){
 
@@ -457,10 +546,6 @@ deleteArea.classList.remove(
 }
 
 }
-
-/* =========================
-   アルバム描画
-========================= */
 
 function renderAlbums(){
 
@@ -605,10 +690,6 @@ gallery.appendChild(photoCard);
 
 }
 
-/* =========================
-   写真追加
-========================= */
-
 function uploadPhotos(albumIndex, event){
 
 const files =
@@ -650,10 +731,6 @@ reader.readAsDataURL(file);
 
 }
 
-/* =========================
-   写真削除
-========================= */
-
 function deletePhoto(albumIndex, photoIndex){
 
 const data = getData();
@@ -672,10 +749,6 @@ showAlert(
 
 }
 
-/* =========================
-   モーダル外クリック
-========================= */
-
 window.onclick = e => {
 
 if(e.target === modal){
@@ -685,10 +758,6 @@ closeModal();
 }
 
 };
-
-/* =========================
-   地図生成
-========================= */
 
 const width = 1000;
 const height = 1200;
@@ -729,10 +798,6 @@ openModal(d.properties.nam_ja);
 paintMap();
 
 });
-
-/* =========================
-   地図色変更
-========================= */
 
 function paintMap(){
 
