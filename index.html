@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mika & Ryotaro's Travel Memories in Japan</title>
+  <title>日本アルバムマップ</title>
   <style>
     body {
       margin: 0;
@@ -166,12 +166,7 @@
   <header>日本アルバムマップ</header>
 
   <div class="container">
-    <p class="description">
-      都道府県をタップしてアルバムを追加。<br>
-      写真を1枚以上追加すると都道府県の色が変化します。
-    </p>
-
-    <div class="map-grid" id="map"></div>
+    <div id="japanMap" class="japan-map"></div>
   </div>
 
   <div class="modal" id="modal">
@@ -182,11 +177,12 @@
       </div>
 
       <div class="upload-box">
-        <input type="file" id="fileInput" accept="image/*" multiple>
+        <input type="text" id="albumName" placeholder="アルバム名を入力">
+        <input type="color" id="albumColor" value="#10b981">
+        <button onclick="createAlbum()">アルバム作成</button>
       </div>
 
-      <div class="gallery" id="gallery"></div>
-      <div class="empty" id="emptyMessage">まだ写真がありません</div>
+      <div id="albumList"></div>
     </div>
   </div>
 
@@ -203,92 +199,175 @@
       '沖縄県'
     ];
 
-    const map = document.getElementById('map');
+    const japanMap = document.getElementById('japanMap');
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modalTitle');
-    const gallery = document.getElementById('gallery');
-    const emptyMessage = document.getElementById('emptyMessage');
-    const fileInput = document.getElementById('fileInput');
+    const albumList = document.getElementById('albumList');
 
     let currentPrefecture = '';
 
-    function getAlbums() {
-      return JSON.parse(localStorage.getItem('japanAlbums') || '{}');
+    function getData() {
+      return JSON.parse(localStorage.getItem('travelAlbums') || '{}');
     }
 
-    function saveAlbums(data) {
-      localStorage.setItem('japanAlbums', JSON.stringify(data));
+    function saveData(data) {
+      localStorage.setItem('travelAlbums', JSON.stringify(data));
     }
 
     function renderMap() {
-      const albums = getAlbums();
-      map.innerHTML = '';
+      const data = getData();
+      japanMap.innerHTML = '';
 
       prefectures.forEach(pref => {
-        const count = albums[pref]?.length || 0;
+        const item = document.createElement('div');
+        item.className = 'prefecture';
 
-        const card = document.createElement('div');
-        card.className = 'prefecture';
+        const albums = data[pref] || [];
 
-        if (count > 0) {
-          card.classList.add('active');
+        if (albums.length > 0) {
+          item.style.background = albums[albums.length - 1].color;
+          item.style.color = 'white';
         }
 
-        card.innerHTML = `
-          <div class="pref-name">${pref}</div>
-          <div class="album-count">${count} 枚</div>
-        `;
+        item.innerHTML = `<div class="pref-name">${pref}</div>`;
 
-        card.onclick = () => openModal(pref);
+        item.onclick = () => openModal(pref);
 
-        map.appendChild(card);
+        japanMap.appendChild(item);
       });
     }
 
-    function openModal(prefecture) {
-      currentPrefecture = prefecture;
-      modalTitle.textContent = prefecture + ' のアルバム';
+    function openModal(pref) {
+      currentPrefecture = pref;
+      modalTitle.innerText = pref + ' のアルバム';
       modal.style.display = 'flex';
-      renderGallery();
+      renderAlbums();
     }
 
     function closeModal() {
       modal.style.display = 'none';
     }
 
-    function renderGallery() {
-      const albums = getAlbums();
-      const photos = albums[currentPrefecture] || [];
+    function createAlbum() {
+      const name = document.getElementById('albumName').value.trim();
+      const color = document.getElementById('albumColor').value;
 
-      gallery.innerHTML = '';
-
-      if (photos.length === 0) {
-        emptyMessage.style.display = 'block';
-      } else {
-        emptyMessage.style.display = 'none';
+      if (!name) {
+        alert('アルバム名を入力してください');
+        return;
       }
 
-      photos.forEach((photo, index) => {
-        const card = document.createElement('div');
-        card.className = 'photo-card';
+      const data = getData();
 
-        card.innerHTML = `
-          <img src="${photo}" alt="photo">
-          <div class="photo-actions">
-            <button class="delete-btn" onclick="deletePhoto(${index})">削除</button>
-          </div>
+      if (!data[currentPrefecture]) {
+        data[currentPrefecture] = [];
+      }
+
+      const exists = data[currentPrefecture].some(a => a.name === name);
+
+      if (exists) {
+        alert('同じアルバム名があります');
+        return;
+      }
+
+      data[currentPrefecture].push({
+        name,
+        color,
+        photos: []
+      });
+
+      saveData(data);
+
+      document.getElementById('albumName').value = '';
+
+      renderAlbums();
+      renderMap();
+    }
+
+    function renderAlbums() {
+      const data = getData();
+      const albums = data[currentPrefecture] || [];
+
+      albumList.innerHTML = '';
+
+      if (albums.length === 0) {
+        albumList.innerHTML = '<p>アルバムがありません</p>';
+        return;
+      }
+
+      albums.forEach((album, index) => {
+        const div = document.createElement('div');
+        div.style.border = '1px solid #ddd';
+        div.style.padding = '12px';
+        div.style.marginBottom = '10px';
+        div.style.borderRadius = '12px';
+        div.style.background = '#fafafa';
+
+        div.innerHTML = `
+          <h3>${album.name}</h3>
+          <p>カラー: <span style="display:inline-block;width:20px;height:20px;background:${album.color};border-radius:50%;vertical-align:middle"></span></p>
+          <input type="file" multiple accept="image/*" onchange="uploadPhotos(${index}, event)">
+          <div class="gallery" id="gallery-${index}"></div>
         `;
 
-        gallery.appendChild(card);
+        albumList.appendChild(div);
+
+        const gallery = div.querySelector(`#gallery-${index}`);
+
+        album.photos.forEach((photo, photoIndex) => {
+          const imgWrap = document.createElement('div');
+          imgWrap.className = 'photo-card';
+
+          imgWrap.innerHTML = `
+            <img src="${photo}">
+            <div class="photo-actions">
+              <button class="delete-btn" onclick="deletePhoto(${index}, ${photoIndex})">削除</button>
+            </div>
+          `;
+
+          gallery.appendChild(imgWrap);
+        });
       });
     }
 
-    function deletePhoto(index) {
-      const albums = getAlbums();
-      albums[currentPrefecture].splice(index, 1);
-      saveAlbums(albums);
-      renderGallery();
-      renderMap();
+    function uploadPhotos(albumIndex, event) {
+      const files = Array.from(event.target.files);
+      const data = getData();
+
+      let loaded = 0;
+
+      files.forEach(file => {
+        const reader = new FileReader();
+
+        reader.onload = e => {
+          data[currentPrefecture][albumIndex].photos.push(e.target.result);
+
+          loaded++;
+
+          if (loaded === files.length) {
+            saveData(data);
+            renderAlbums();
+          }
+        };
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function deletePhoto(albumIndex, photoIndex) {
+      const data = getData();
+      data[currentPrefecture][albumIndex].photos.splice(photoIndex, 1);
+      saveData(data);
+      renderAlbums();
+    }
+
+    window.onclick = e => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    };
+
+    renderMap();
     }
 
     fileInput.addEventListener('change', event => {
