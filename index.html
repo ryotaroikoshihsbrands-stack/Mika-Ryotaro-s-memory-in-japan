@@ -1,216 +1,209 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>日本アルバムマップ</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #f3f4f6;
-    }
+<title>日本アルバムマップ</title>
 
-    header {
-      background: #111827;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      font-size: 30px;
-      font-weight: bold;
-    }
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 
-    .container {
-      display: flex;
-      justify-content: center;
-      padding: 20px;
-    }
+<style>
 
-    svg {
-      width: 100%;
-      max-width: 900px;
-      height: auto;
-    }
+body{
+  margin:0;
+  font-family:sans-serif;
+  background:#f3f4f6;
+}
 
-    .prefecture {
-      fill: white;
-      stroke: #333;
-      stroke-width: 2;
-      cursor: pointer;
-      transition: 0.2s;
-    }
+header{
+  background:#111827;
+  color:white;
+  text-align:center;
+  padding:20px;
+  font-size:28px;
+  font-weight:bold;
+}
 
-    .prefecture:hover {
-      opacity: 0.8;
-    }
+.container{
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
 
-    .label {
-      font-size: 10px;
-      pointer-events: none;
-      text-anchor: middle;
-      fill: #111;
-    }
+#map{
+  width:100%;
+  max-width:1200px;
+  background:white;
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.08);
+}
 
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      padding: 20px;
-    }
+svg{
+  width:100%;
+  height:auto;
+}
 
-    .modal-content {
-      background: white;
-      width: 100%;
-      max-width: 800px;
-      max-height: 90vh;
-      overflow-y: auto;
-      border-radius: 20px;
-      padding: 20px;
-    }
+.prefecture{
+  fill:white;
+  stroke:#333;
+  stroke-width:0.5;
+  cursor:pointer;
+  transition:0.2s;
+}
 
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
+.prefecture:hover{
+  opacity:0.8;
+}
 
-    .close-btn {
-      background: #ef4444;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.5);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+  padding:20px;
+}
 
-    .album-create {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
+.modal-content{
+  background:white;
+  width:100%;
+  max-width:900px;
+  max-height:90vh;
+  overflow-y:auto;
+  border-radius:20px;
+  padding:20px;
+}
 
-    .album-create input[type="text"] {
-      flex: 1;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-    }
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
 
-    .album-create button {
-      background: #10b981;
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      cursor: pointer;
-    }
+.close-btn{
+  background:#ef4444;
+  color:white;
+  border:none;
+  padding:10px 16px;
+  border-radius:10px;
+  cursor:pointer;
+}
 
-    .album-card {
-      border: 1px solid #ddd;
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 20px;
-      background: #fafafa;
-    }
+.album-create{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
 
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 10px;
-      margin-top: 10px;
-    }
+.album-create input[type="text"]{
+  flex:1;
+  min-width:200px;
+  padding:10px;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
 
-    .photo-card img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 10px;
-    }
-  </style>
+.album-create button{
+  background:#10b981;
+  color:white;
+  border:none;
+  padding:10px 16px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.album-card{
+  border:1px solid #ddd;
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:20px;
+  background:#fafafa;
+}
+
+.gallery{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+
+.photo-card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.delete-btn{
+  width:100%;
+  margin-top:5px;
+  background:#ef4444;
+  color:white;
+  border:none;
+  padding:8px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+</style>
 </head>
+
 <body>
 
 <header>
-  日本アルバムマップ
+日本アルバムマップ
 </header>
 
 <div class="container">
 
-<svg viewBox="0 0 900 700" id="japanMap">
-
-  <g data-pref="北海道">
-    <rect class="prefecture" x="650" y="40" width="140" height="80"></rect>
-    <text class="label" x="720" y="85">北海道</text>
-  </g>
-
-  <g data-pref="青森県">
-    <rect class="prefecture" x="620" y="150" width="80" height="40"></rect>
-    <text class="label" x="660" y="175">青森</text>
-  </g>
-
-  <g data-pref="岩手県">
-    <rect class="prefecture" x="710" y="150" width="80" height="40"></rect>
-    <text class="label" x="750" y="175">岩手</text>
-  </g>
-
-  <g data-pref="東京都">
-    <rect class="prefecture" x="540" y="320" width="80" height="40"></rect>
-    <text class="label" x="580" y="345">東京</text>
-  </g>
-
-  <g data-pref="愛知県">
-    <rect class="prefecture" x="450" y="400" width="80" height="40"></rect>
-    <text class="label" x="490" y="425">愛知</text>
-  </g>
-
-  <g data-pref="大阪府">
-    <rect class="prefecture" x="360" y="450" width="80" height="40"></rect>
-    <text class="label" x="400" y="475">大阪</text>
-  </g>
-
-  <g data-pref="広島県">
-    <rect class="prefecture" x="250" y="470" width="80" height="40"></rect>
-    <text class="label" x="290" y="495">広島</text>
-  </g>
-
-  <g data-pref="福岡県">
-    <rect class="prefecture" x="120" y="520" width="80" height="40"></rect>
-    <text class="label" x="160" y="545">福岡</text>
-  </g>
-
-  <g data-pref="沖縄県">
-    <rect class="prefecture" x="80" y="640" width="80" height="40"></rect>
-    <text class="label" x="120" y="665">沖縄</text>
-  </g>
-
-</svg>
+<div id="map"></div>
 
 </div>
 
 <div class="modal" id="modal">
-  <div class="modal-content">
 
-    <div class="modal-header">
-      <h2 id="modalTitle"></h2>
-      <button class="close-btn" onclick="closeModal()">閉じる</button>
-    </div>
+<div class="modal-content">
 
-    <div class="album-create">
-      <input type="text" id="albumName" placeholder="アルバム名を入力">
-      <input type="color" id="albumColor" value="#10b981">
-      <button onclick="createAlbum()">アルバム作成</button>
-    </div>
+<div class="modal-header">
 
-    <div id="albumList"></div>
+<h2 id="modalTitle"></h2>
 
-  </div>
+<button class="close-btn" onclick="closeModal()">
+閉じる
+</button>
+
+</div>
+
+<div class="album-create">
+
+<input
+type="text"
+id="albumName"
+placeholder="アルバム名を入力"
+>
+
+<input
+type="color"
+id="albumColor"
+value="#10b981"
+>
+
+<button onclick="createAlbum()">
+アルバム作成
+</button>
+
+</div>
+
+<div id="albumList"></div>
+
+</div>
 </div>
 
 <script>
@@ -221,200 +214,296 @@ const albumList = document.getElementById('albumList');
 
 let currentPrefecture = '';
 
-function getData() {
-  return JSON.parse(localStorage.getItem('travelAlbums') || '{}');
-}
+function getData(){
 
-function saveData(data) {
-  localStorage.setItem('travelAlbums', JSON.stringify(data));
-}
-
-function renderMap() {
-
-  const data = getData();
-
-  document.querySelectorAll('g[data-pref]').forEach(group => {
-
-    const pref = group.dataset.pref;
-
-    const rect = group.querySelector('.prefecture');
-
-    const albums = data[pref] || [];
-
-    if (albums.length > 0) {
-      rect.style.fill = albums[albums.length - 1].color;
-    } else {
-      rect.style.fill = 'white';
-    }
-
-  });
+return JSON.parse(
+localStorage.getItem('travelAlbums') || '{}'
+);
 
 }
 
-function openModal(pref) {
+function saveData(data){
 
-  currentPrefecture = pref;
-
-  modalTitle.innerText = pref + ' のアルバム';
-
-  modal.style.display = 'flex';
-
-  renderAlbums();
+localStorage.setItem(
+'travelAlbums',
+JSON.stringify(data)
+);
 
 }
 
-function closeModal() {
-  modal.style.display = 'none';
-}
+function openModal(pref){
 
-function createAlbum() {
+currentPrefecture = pref;
 
-  const name = document.getElementById('albumName').value.trim();
+modalTitle.innerText =
+pref + ' のアルバム';
 
-  const color = document.getElementById('albumColor').value;
+modal.style.display = 'flex';
 
-  if (!name) {
-    alert('アルバム名を入力してください');
-    return;
-  }
-
-  const data = getData();
-
-  if (!data[currentPrefecture]) {
-    data[currentPrefecture] = [];
-  }
-
-  data[currentPrefecture].push({
-    name,
-    color,
-    photos: []
-  });
-
-  saveData(data);
-
-  document.getElementById('albumName').value = '';
-
-  renderAlbums();
-
-  renderMap();
+renderAlbums();
 
 }
 
-function renderAlbums() {
+function closeModal(){
 
-  const data = getData();
-
-  const albums = data[currentPrefecture] || [];
-
-  albumList.innerHTML = '';
-
-  albums.forEach((album, albumIndex) => {
-
-    const card = document.createElement('div');
-
-    card.className = 'album-card';
-
-    card.innerHTML = `
-      <h3>${album.name}</h3>
-
-      <p>
-        色：
-        <span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:${album.color}"></span>
-      </p>
-
-      <input type="file" multiple accept="image/*" onchange="uploadPhotos(${albumIndex}, event)">
-
-      <div class="gallery" id="gallery-${albumIndex}"></div>
-    `;
-
-    albumList.appendChild(card);
-
-    const gallery = card.querySelector(`#gallery-${albumIndex}`);
-
-    album.photos.forEach((photo, photoIndex) => {
-
-      const img = document.createElement('div');
-
-      img.className = 'photo-card';
-
-      img.innerHTML = `
-        <img src="${photo}">
-        <button onclick="deletePhoto(${albumIndex}, ${photoIndex})">削除</button>
-      `;
-
-      gallery.appendChild(img);
-
-    });
-
-  });
+modal.style.display = 'none';
 
 }
 
-function uploadPhotos(albumIndex, event) {
+function createAlbum(){
 
-  const files = Array.from(event.target.files);
+const name =
+document.getElementById('albumName')
+.value
+.trim();
 
-  const data = getData();
+const color =
+document.getElementById('albumColor')
+.value;
 
-  let loaded = 0;
+if(!name){
 
-  files.forEach(file => {
+alert('アルバム名を入力してください');
 
-    const reader = new FileReader();
-
-    reader.onload = e => {
-
-      data[currentPrefecture][albumIndex].photos.push(e.target.result);
-
-      loaded++;
-
-      if (loaded === files.length) {
-
-        saveData(data);
-
-        renderAlbums();
-
-      }
-
-    };
-
-    reader.readAsDataURL(file);
-
-  });
+return;
 
 }
 
-function deletePhoto(albumIndex, photoIndex) {
+const data = getData();
 
-  const data = getData();
+if(!data[currentPrefecture]){
 
-  data[currentPrefecture][albumIndex].photos.splice(photoIndex, 1);
+data[currentPrefecture] = [];
 
-  saveData(data);
+}
 
-  renderAlbums();
+data[currentPrefecture].push({
+
+name:name,
+color:color,
+photos:[]
+
+});
+
+saveData(data);
+
+document.getElementById('albumName').value = '';
+
+renderAlbums();
+
+paintMap();
+
+}
+
+function renderAlbums(){
+
+const data = getData();
+
+const albums =
+data[currentPrefecture] || [];
+
+albumList.innerHTML = '';
+
+albums.forEach((album, albumIndex) => {
+
+const card =
+document.createElement('div');
+
+card.className = 'album-card';
+
+card.innerHTML = `
+
+<h3>${album.name}</h3>
+
+<p>
+
+色：
+
+<span style="
+display:inline-block;
+width:20px;
+height:20px;
+background:${album.color};
+border-radius:50%;
+"></span>
+
+</p>
+
+<input
+type="file"
+multiple
+accept="image/*"
+onchange="uploadPhotos(${albumIndex}, event)"
+>
+
+<div
+class="gallery"
+id="gallery-${albumIndex}"
+></div>
+
+`;
+
+albumList.appendChild(card);
+
+const gallery =
+card.querySelector(
+`#gallery-${albumIndex}`
+);
+
+album.photos.forEach((photo, photoIndex) => {
+
+const photoCard =
+document.createElement('div');
+
+photoCard.className = 'photo-card';
+
+photoCard.innerHTML = `
+
+<img src="${photo}">
+
+<button
+class="delete-btn"
+onclick="deletePhoto(${albumIndex}, ${photoIndex})"
+>
+
+削除
+
+</button>
+
+`;
+
+gallery.appendChild(photoCard);
+
+});
+
+});
+
+}
+
+function uploadPhotos(albumIndex, event){
+
+const files =
+Array.from(event.target.files);
+
+const data = getData();
+
+let loaded = 0;
+
+files.forEach(file => {
+
+const reader = new FileReader();
+
+reader.onload = e => {
+
+data[currentPrefecture][albumIndex]
+.photos
+.push(e.target.result);
+
+loaded++;
+
+if(loaded === files.length){
+
+saveData(data);
+
+renderAlbums();
+
+}
+
+};
+
+reader.readAsDataURL(file);
+
+});
+
+}
+
+function deletePhoto(albumIndex, photoIndex){
+
+const data = getData();
+
+data[currentPrefecture][albumIndex]
+.photos
+.splice(photoIndex, 1);
+
+saveData(data);
+
+renderAlbums();
 
 }
 
 window.onclick = e => {
 
-  if (e.target === modal) {
-    closeModal();
-  }
+if(e.target === modal){
+
+closeModal();
+
+}
 
 };
 
-document.querySelectorAll('g[data-pref]').forEach(group => {
+const width = 1000;
+const height = 1200;
 
-  group.addEventListener('click', () => {
+const svg = d3
+.select('#map')
+.append('svg')
+.attr('viewBox', `0 0 ${width} ${height}`);
 
-    openModal(group.dataset.pref);
+const projection = d3.geoMercator()
+.center([137,38])
+.scale(1700)
+.translate([width/2,height/2]);
 
-  });
+const path = d3.geoPath().projection(projection);
+
+d3.json(
+'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson'
+)
+.then(data => {
+
+svg.selectAll('path')
+.data(data.features)
+.enter()
+.append('path')
+.attr('class','prefecture')
+.attr('d', path)
+.attr('id', d => d.properties.nam_ja)
+.on('click', (event,d) => {
+
+openModal(d.properties.nam_ja);
 
 });
 
-renderMap();
+paintMap();
+
+});
+
+function paintMap(){
+
+const data = getData();
+
+document
+.querySelectorAll('.prefecture')
+.forEach(pref => {
+
+const name = pref.id;
+
+const albums = data[name] || [];
+
+if(albums.length > 0){
+
+pref.style.fill =
+albums[albums.length - 1].color;
+
+}else{
+
+pref.style.fill = 'white';
+
+}
+
+});
+
+}
 
 </script>
 
