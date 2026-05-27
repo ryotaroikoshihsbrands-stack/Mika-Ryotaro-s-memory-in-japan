@@ -18,18 +18,19 @@ background:#f3f4f6;
 }
 
 header{
-background:#111827;
+background:#0f172a;
 color:white;
-padding:20px;
+padding:24px;
 text-align:center;
-font-size:32px;
+font-size:34px;
 font-weight:bold;
 }
 
-#map-wrapper{
+#map-container{
 display:flex;
 justify-content:center;
 padding:20px;
+overflow:auto;
 }
 
 svg{
@@ -37,9 +38,9 @@ width:100%;
 max-width:1200px;
 height:auto;
 background:white;
-border-radius:20px;
-padding:20px;
+border-radius:24px;
 box-shadow:0 4px 20px rgba(0,0,0,0.1);
+padding:20px;
 }
 
 .pref{
@@ -72,7 +73,7 @@ max-width:1000px;
 max-height:90vh;
 overflow-y:auto;
 border-radius:20px;
-padding:25px;
+padding:24px;
 }
 
 .album-create{
@@ -96,19 +97,36 @@ cursor:pointer;
 font-weight:bold;
 }
 
+.create-btn{
+background:#10b981;
+color:white;
+}
+
+.close-btn{
+background:#ef4444;
+color:white;
+margin-top:20px;
+}
+
+.delete-btn{
+background:#dc2626;
+color:white;
+margin-top:10px;
+}
+
 .album-card{
-border:1px solid #ddd;
-padding:15px;
-border-radius:14px;
-margin-bottom:20px;
 background:#fafafa;
+border:1px solid #ddd;
+border-radius:14px;
+padding:16px;
+margin-bottom:20px;
 }
 
 .gallery{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
 gap:12px;
-margin-top:15px;
+margin-top:16px;
 }
 
 .media-card{
@@ -140,12 +158,6 @@ z-index:999999;
 font-weight:bold;
 }
 
-.delete-btn{
-background:#ef4444;
-color:white;
-margin-top:10px;
-}
-
 </style>
 </head>
 
@@ -155,93 +167,153 @@ margin-top:10px;
 国内旅行の思い出
 </header>
 
-<div id="map-wrapper">
+<div id="map-container">
 
-<svg viewBox="0 0 1000 700">
+<svg viewBox="0 0 1200 900">
 
 <!-- 北海道 -->
 <path id="北海道" class="pref"
-d="M760 80 L860 80 L900 140 L860 210 L760 200 L720 130 Z"/>
+d="M880 100 L980 100 L1030 160 L1000 240 L920 260 L850 230 L820 160 Z"/>
 
 <!-- 東北 -->
 <path id="青森県" class="pref"
-d="M700 230 L760 230 L760 270 L700 270 Z"/>
-
-<path id="岩手県" class="pref"
-d="M720 270 L770 270 L770 330 L720 330 Z"/>
-
-<path id="宮城県" class="pref"
-d="M690 330 L740 330 L740 370 L690 370 Z"/>
+d="M790 290 L850 290 L860 340 L810 350 Z"/>
 
 <path id="秋田県" class="pref"
-d="M660 270 L710 270 L710 330 L660 330 Z"/>
+d="M760 340 L810 340 L810 420 L760 420 Z"/>
+
+<path id="岩手県" class="pref"
+d="M820 340 L870 340 L870 430 L820 430 Z"/>
 
 <path id="山形県" class="pref"
-d="M650 330 L700 330 L700 380 L650 380 Z"/>
+d="M760 430 L810 430 L810 500 L760 500 Z"/>
+
+<path id="宮城県" class="pref"
+d="M820 440 L870 440 L870 500 L820 500 Z"/>
 
 <path id="福島県" class="pref"
-d="M650 390 L720 390 L720 450 L650 450 Z"/>
+d="M770 510 L880 510 L880 590 L770 590 Z"/>
 
 <!-- 関東 -->
-<path id="東京都" class="pref"
-d="M660 500 L700 500 L700 540 L660 540 Z"/>
+<path id="茨城県" class="pref"
+d="M900 560 L960 560 L960 650 L900 650 Z"/>
 
-<path id="神奈川県" class="pref"
-d="M630 540 L690 540 L690 580 L630 580 Z"/>
+<path id="栃木県" class="pref"
+d="M840 560 L900 560 L900 620 L840 620 Z"/>
+
+<path id="群馬県" class="pref"
+d="M770 560 L840 560 L840 620 L770 620 Z"/>
 
 <path id="埼玉県" class="pref"
-d="M620 470 L680 470 L680 510 L620 510 Z"/>
+d="M800 630 L870 630 L870 680 L800 680 Z"/>
 
 <path id="千葉県" class="pref"
-d="M700 500 L760 500 L760 600 L700 600 Z"/>
+d="M890 660 L960 660 L960 780 L890 780 Z"/>
+
+<path id="東京都" class="pref"
+d="M820 690 L870 690 L870 730 L820 730 Z"/>
+
+<path id="神奈川県" class="pref"
+d="M800 740 L880 740 L880 790 L800 790 Z"/>
 
 <!-- 中部 -->
 <path id="新潟県" class="pref"
-d="M560 350 L650 350 L650 420 L560 420 Z"/>
+d="M660 430 L780 430 L780 520 L660 520 Z"/>
+
+<path id="富山県" class="pref"
+d="M620 540 L680 540 L680 590 L620 590 Z"/>
+
+<path id="石川県" class="pref"
+d="M560 520 L620 520 L620 590 L560 590 Z"/>
+
+<path id="福井県" class="pref"
+d="M550 600 L630 600 L630 650 L550 650 Z"/>
 
 <path id="長野県" class="pref"
-d="M520 450 L620 450 L620 520 L520 520 Z"/>
+d="M670 600 L770 600 L770 690 L670 690 Z"/>
+
+<path id="岐阜県" class="pref"
+d="M580 670 L680 670 L680 760 L580 760 Z"/>
 
 <path id="静岡県" class="pref"
-d="M540 540 L650 540 L650 590 L540 590 Z"/>
+d="M720 760 L860 760 L860 810 L720 810 Z"/>
+
+<path id="愛知県" class="pref"
+d="M620 770 L720 770 L720 830 L620 830 Z"/>
 
 <!-- 関西 -->
-<path id="大阪府" class="pref"
-d="M420 520 L470 520 L470 560 L420 560 Z"/>
+<path id="滋賀県" class="pref"
+d="M530 650 L580 650 L580 730 L530 730 Z"/>
 
 <path id="京都府" class="pref"
-d="M420 450 L500 450 L500 510 L420 510 Z"/>
+d="M470 620 L560 620 L560 700 L470 700 Z"/>
+
+<path id="大阪府" class="pref"
+d="M470 760 L550 760 L550 810 L470 810 Z"/>
 
 <path id="兵庫県" class="pref"
-d="M340 470 L430 470 L430 530 L340 530 Z"/>
+d="M360 690 L490 690 L490 760 L360 760 Z"/>
+
+<path id="奈良県" class="pref"
+d="M550 740 L610 740 L610 810 L550 810 Z"/>
+
+<path id="和歌山県" class="pref"
+d="M520 820 L640 820 L640 880 L520 880 Z"/>
 
 <!-- 中国 -->
-<path id="広島県" class="pref"
-d="M220 470 L320 470 L320 530 L220 530 Z"/>
+<path id="鳥取県" class="pref"
+d="M320 650 L390 650 L390 700 L320 700 Z"/>
+
+<path id="島根県" class="pref"
+d="M200 650 L320 650 L320 700 L200 700 Z"/>
 
 <path id="岡山県" class="pref"
-d="M320 470 L390 470 L390 520 L320 520 Z"/>
+d="M320 720 L420 720 L420 780 L320 780 Z"/>
+
+<path id="広島県" class="pref"
+d="M200 720 L320 720 L320 780 L200 780 Z"/>
+
+<path id="山口県" class="pref"
+d="M90 700 L200 700 L200 780 L90 780 Z"/>
 
 <!-- 四国 -->
-<path id="愛媛県" class="pref"
-d="M260 560 L340 560 L340 600 L260 600 Z"/>
-
 <path id="香川県" class="pref"
-d="M330 530 L390 530 L390 560 L330 560 Z"/>
+d="M320 810 L400 810 L400 850 L320 850 Z"/>
+
+<path id="愛媛県" class="pref"
+d="M190 840 L320 840 L320 900 L190 900 Z"/>
+
+<path id="徳島県" class="pref"
+d="M410 830 L470 830 L470 890 L410 890 Z"/>
+
+<path id="高知県" class="pref"
+d="M310 870 L450 870 L450 920 L310 920 Z"/>
 
 <!-- 九州 -->
 <path id="福岡県" class="pref"
-d="M120 470 L200 470 L200 530 L120 530 Z"/>
+d="M70 620 L160 620 L160 700 L70 700 Z"/>
+
+<path id="佐賀県" class="pref"
+d="M10 650 L70 650 L70 700 L10 700 Z"/>
+
+<path id="長崎県" class="pref"
+d="M0 720 L60 720 L60 800 L0 800 Z"/>
 
 <path id="熊本県" class="pref"
-d="M120 540 L190 540 L190 610 L120 610 Z"/>
+d="M70 720 L160 720 L160 810 L70 810 Z"/>
+
+<path id="大分県" class="pref"
+d="M170 700 L240 700 L240 790 L170 790 Z"/>
+
+<path id="宮崎県" class="pref"
+d="M170 800 L250 800 L250 900 L170 900 Z"/>
 
 <path id="鹿児島県" class="pref"
-d="M90 620 L170 620 L170 690 L90 690 Z"/>
+d="M60 850 L160 850 L160 980 L60 980 Z"/>
 
 <!-- 沖縄 -->
 <path id="沖縄県" class="pref"
-d="M40 650 L90 650 L90 680 L40 680 Z"/>
+d="M40 1020 L90 1020 L90 1050 L40 1050 Z"/>
 
 </svg>
 
@@ -270,7 +342,7 @@ value="#10b981"
 >
 
 <button
-style="background:#10b981;color:white;"
+class="create-btn"
 onclick="createAlbum()"
 >
 アルバム作成
@@ -281,7 +353,7 @@ onclick="createAlbum()"
 <div id="albumList"></div>
 
 <button
-style="background:#ef4444;color:white;"
+class="close-btn"
 onclick="closeModal()"
 >
 閉じる
@@ -295,7 +367,7 @@ onclick="closeModal()"
 
 const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
-const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum?usp=drive_link';
+const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 
 const DISCOVERY_DOC =
 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
@@ -308,7 +380,7 @@ let currentPrefecture = '';
 let albumData = {};
 
 window.alert = function(){};
-window.confirm = function(){ return true; };
+window.confirm = function(){return true;};
 
 function showAlert(message){
 
@@ -327,10 +399,10 @@ box.style.display='none';
 
 function gapiLoaded(){
 
-gapi.load('client', async ()=>{
+gapi.load('client', async()=>{
 
 await gapi.client.init({
-apiKey: API_KEY,
+apiKey:API_KEY,
 discoveryDocs:[DISCOVERY_DOC]
 });
 
@@ -345,8 +417,8 @@ function initializeGis(){
 tokenClient =
 google.accounts.oauth2.initTokenClient({
 
-client_id: CLIENT_ID,
-scope: SCOPES,
+client_id:CLIENT_ID,
+scope:SCOPES,
 
 callback:(resp)=>{
 
@@ -426,7 +498,7 @@ return;
 
 if(!albumData[currentPrefecture]){
 
-albumData[currentPrefecture] = [];
+albumData[currentPrefecture]=[];
 
 }
 
@@ -516,7 +588,8 @@ renderGallery(index);
 
 function deleteAlbum(index){
 
-albumData[currentPrefecture].splice(index,1);
+albumData[currentPrefecture]
+.splice(index,1);
 
 renderAlbums();
 
@@ -528,7 +601,8 @@ showAlert('アルバム削除完了');
 
 function paintMap(){
 
-document.querySelectorAll('.pref').forEach(pref=>{
+document.querySelectorAll('.pref')
+.forEach(pref=>{
 
 pref.style.fill='#ffffff';
 
