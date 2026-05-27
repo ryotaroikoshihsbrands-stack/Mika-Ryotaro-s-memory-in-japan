@@ -2,62 +2,42 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>国内旅行の思い出</title>
 
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
 
-*{
-box-sizing:border-box;
-}
-
 body{
 margin:0;
-font-family:"Yu Gothic","Hiragino Sans",sans-serif;
+font-family:"Yu Gothic",sans-serif;
 background:#f3f4f6;
-color:#111827;
 }
-
-/* =========================
-HEADER
-========================= */
 
 header{
 background:#0f172a;
+color:white;
 padding:28px;
 text-align:center;
-color:white;
 font-size:42px;
 font-weight:bold;
-letter-spacing:2px;
-box-shadow:0 4px 10px rgba(0,0,0,0.15);
 }
-
-/* =========================
-MAIN
-========================= */
 
 .main{
 padding:20px;
-max-width:1600px;
-margin:auto;
 }
 
 .map-wrapper{
 background:white;
 border-radius:24px;
 padding:20px;
-box-shadow:0 4px 16px rgba(0,0,0,0.08);
+box-shadow:0 4px 18px rgba(0,0,0,0.08);
 overflow:auto;
 }
-
-/* =========================
-SVG MAP
-========================= */
 
 svg{
 width:100%;
@@ -65,30 +45,26 @@ height:auto;
 }
 
 .prefecture{
-fill:#ffffff;
+fill:white;
 stroke:#333;
-stroke-width:1.2;
+stroke-width:0.7;
 cursor:pointer;
 transition:0.2s;
 }
 
 .prefecture:hover{
-filter:brightness(0.92);
+filter:brightness(0.9);
 }
-
-/* =========================
-MODAL
-========================= */
 
 .modal{
 position:fixed;
 inset:0;
-background:rgba(0,0,0,0.55);
+background:rgba(0,0,0,0.5);
 display:none;
 justify-content:center;
 align-items:flex-start;
-overflow:auto;
 padding:40px 20px;
+overflow:auto;
 z-index:9999;
 }
 
@@ -98,18 +74,6 @@ width:100%;
 max-width:1200px;
 border-radius:24px;
 padding:28px;
-animation:fadeIn 0.25s;
-}
-
-@keyframes fadeIn{
-from{
-transform:translateY(10px);
-opacity:0;
-}
-to{
-transform:translateY(0);
-opacity:1;
-}
 }
 
 .modal-top{
@@ -120,7 +84,7 @@ margin-bottom:24px;
 }
 
 .modal-title{
-font-size:36px;
+font-size:32px;
 font-weight:bold;
 }
 
@@ -128,44 +92,31 @@ font-weight:bold;
 background:#ef4444;
 color:white;
 border:none;
-padding:14px 22px;
+padding:12px 20px;
 border-radius:12px;
-font-size:16px;
 cursor:pointer;
 font-weight:bold;
 }
 
-/* =========================
-ALBUM CREATE
-========================= */
-
 .album-create{
 background:#f9fafb;
-border:1px solid #e5e7eb;
-border-radius:20px;
 padding:20px;
-margin-bottom:28px;
-}
-
-.album-create h3{
-margin-top:0;
-font-size:24px;
+border-radius:18px;
+margin-bottom:24px;
 }
 
 .create-row{
 display:flex;
-gap:12px;
+gap:10px;
 flex-wrap:wrap;
-align-items:center;
 }
 
 .create-row input[type="text"]{
 flex:1;
-min-width:260px;
 padding:14px;
-font-size:16px;
 border-radius:12px;
-border:1px solid #d1d5db;
+border:1px solid #ccc;
+font-size:16px;
 }
 
 .create-row input[type="color"]{
@@ -173,7 +124,6 @@ width:60px;
 height:50px;
 border:none;
 background:none;
-cursor:pointer;
 }
 
 .create-btn{
@@ -182,14 +132,9 @@ color:white;
 border:none;
 padding:14px 24px;
 border-radius:12px;
-cursor:pointer;
-font-size:16px;
 font-weight:bold;
+cursor:pointer;
 }
-
-/* =========================
-ALBUM LIST
-========================= */
 
 .album-list{
 display:grid;
@@ -198,14 +143,11 @@ gap:20px;
 }
 
 .album-card{
+background:white;
 border-radius:20px;
 padding:20px;
-background:white;
 border:3px solid #e5e7eb;
 box-shadow:0 2px 10px rgba(0,0,0,0.06);
-display:flex;
-flex-direction:column;
-gap:14px;
 }
 
 .album-title{
@@ -214,25 +156,25 @@ font-weight:bold;
 display:flex;
 align-items:center;
 gap:10px;
+margin-bottom:14px;
 }
 
 .album-color{
 width:22px;
 height:22px;
 border-radius:50%;
-display:inline-block;
 }
 
 .album-actions{
 display:flex;
 gap:10px;
 flex-wrap:wrap;
+margin-bottom:14px;
 }
 
 .upload-btn{
 background:#2563eb;
 color:white;
-border:none;
 padding:10px 14px;
 border-radius:10px;
 cursor:pointer;
@@ -245,8 +187,8 @@ color:white;
 border:none;
 padding:10px 14px;
 border-radius:10px;
-cursor:pointer;
 font-weight:bold;
+cursor:pointer;
 }
 
 .gallery{
@@ -261,12 +203,7 @@ width:100%;
 height:90px;
 object-fit:cover;
 border-radius:10px;
-border:1px solid #d1d5db;
 }
-
-/* =========================
-ALERT
-========================= */
 
 .custom-alert{
 position:fixed;
@@ -275,35 +212,15 @@ left:50%;
 transform:translateX(-50%);
 background:#111827;
 color:white;
-padding:16px 26px;
-border-radius:14px;
-font-size:16px;
-font-weight:bold;
+padding:14px 22px;
+border-radius:12px;
 display:none;
 z-index:999999;
-box-shadow:0 4px 14px rgba(0,0,0,0.25);
-}
-
-/* =========================
-RESPONSIVE
-========================= */
-
-@media(max-width:768px){
-
-header{
-font-size:28px;
-padding:20px;
-}
-
-.modal-title{
-font-size:28px;
-}
-
+font-weight:bold;
 }
 
 </style>
 </head>
-
 <body>
 
 <header>
@@ -311,271 +228,44 @@ font-size:28px;
 </header>
 
 <div class="main">
-
 <div class="map-wrapper">
-
-<!-- =========================
-REAL JAPAN MAP
-========================= -->
-
-<svg viewBox="0 0 1000 1400">
-
-<!-- 北海道 -->
-<path id="北海道" class="prefecture"
-d="M750 80
-L850 70
-L930 120
-L910 220
-L850 250
-L760 230
-L700 170
-Z"/>
-
-<!-- 青森 -->
-<path id="青森県" class="prefecture"
-d="M700 280 L760 280 L760 330 L700 330 Z"/>
-
-<!-- 岩手 -->
-<path id="岩手県" class="prefecture"
-d="M760 320 L810 320 L810 420 L760 420 Z"/>
-
-<!-- 秋田 -->
-<path id="秋田県" class="prefecture"
-d="M690 320 L750 320 L750 420 L690 420 Z"/>
-
-<!-- 宮城 -->
-<path id="宮城県" class="prefecture"
-d="M760 430 L810 430 L810 500 L760 500 Z"/>
-
-<!-- 山形 -->
-<path id="山形県" class="prefecture"
-d="M690 430 L750 430 L750 500 L690 500 Z"/>
-
-<!-- 福島 -->
-<path id="福島県" class="prefecture"
-d="M700 510 L810 510 L810 590 L700 590 Z"/>
-
-<!-- 新潟 -->
-<path id="新潟県" class="prefecture"
-d="M570 470 L700 470 L700 560 L570 560 Z"/>
-
-<!-- 茨城 -->
-<path id="茨城県" class="prefecture"
-d="M820 580 L880 580 L880 680 L820 680 Z"/>
-
-<!-- 栃木 -->
-<path id="栃木県" class="prefecture"
-d="M760 580 L820 580 L820 650 L760 650 Z"/>
-
-<!-- 群馬 -->
-<path id="群馬県" class="prefecture"
-d="M690 580 L760 580 L760 650 L690 650 Z"/>
-
-<!-- 埼玉 -->
-<path id="埼玉県" class="prefecture"
-d="M710 660 L790 660 L790 710 L710 710 Z"/>
-
-<!-- 千葉 -->
-<path id="千葉県" class="prefecture"
-d="M810 690 L880 690 L880 820 L810 820 Z"/>
-
-<!-- 東京 -->
-<path id="東京都" class="prefecture"
-d="M740 720 L790 720 L790 760 L740 760 Z"/>
-
-<!-- 神奈川 -->
-<path id="神奈川県" class="prefecture"
-d="M710 770 L800 770 L800 820 L710 820 Z"/>
-
-<!-- 富山 -->
-<path id="富山県" class="prefecture"
-d="M500 600 L570 600 L570 650 L500 650 Z"/>
-
-<!-- 石川 -->
-<path id="石川県" class="prefecture"
-d="M430 590 L500 590 L500 650 L430 650 Z"/>
-
-<!-- 福井 -->
-<path id="福井県" class="prefecture"
-d="M430 660 L520 660 L520 720 L430 720 Z"/>
-
-<!-- 長野 -->
-<path id="長野県" class="prefecture"
-d="M560 620 L690 620 L690 730 L560 730 Z"/>
-
-<!-- 岐阜 -->
-<path id="岐阜県" class="prefecture"
-d="M500 740 L620 740 L620 850 L500 850 Z"/>
-
-<!-- 静岡 -->
-<path id="静岡県" class="prefecture"
-d="M620 840 L790 840 L790 900 L620 900 Z"/>
-
-<!-- 愛知 -->
-<path id="愛知県" class="prefecture"
-d="M510 860 L620 860 L620 930 L510 930 Z"/>
-
-<!-- 京都 -->
-<path id="京都府" class="prefecture"
-d="M380 690 L470 690 L470 770 L380 770 Z"/>
-
-<!-- 大阪 -->
-<path id="大阪府" class="prefecture"
-d="M400 820 L470 820 L470 870 L400 870 Z"/>
-
-<!-- 兵庫 -->
-<path id="兵庫県" class="prefecture"
-d="M250 730 L400 730 L400 810 L250 810 Z"/>
-
-<!-- 奈良 -->
-<path id="奈良県" class="prefecture"
-d="M480 790 L540 790 L540 870 L480 870 Z"/>
-
-<!-- 和歌山 -->
-<path id="和歌山県" class="prefecture"
-d="M430 900 L580 900 L580 980 L430 980 Z"/>
-
-<!-- 岡山 -->
-<path id="岡山県" class="prefecture"
-d="M240 830 L360 830 L360 900 L240 900 Z"/>
-
-<!-- 広島 -->
-<path id="広島県" class="prefecture"
-d="M120 830 L240 830 L240 900 L120 900 Z"/>
-
-<!-- 山口 -->
-<path id="山口県" class="prefecture"
-d="M20 810 L120 810 L120 900 L20 900 Z"/>
-
-<!-- 香川 -->
-<path id="香川県" class="prefecture"
-d="M300 930 L380 930 L380 970 L300 970 Z"/>
-
-<!-- 愛媛 -->
-<path id="愛媛県" class="prefecture"
-d="M170 970 L300 970 L300 1040 L170 1040 Z"/>
-
-<!-- 徳島 -->
-<path id="徳島県" class="prefecture"
-d="M390 960 L460 960 L460 1030 L390 1030 Z"/>
-
-<!-- 高知 -->
-<path id="高知県" class="prefecture"
-d="M280 1040 L450 1040 L450 1090 L280 1090 Z"/>
-
-<!-- 福岡 -->
-<path id="福岡県" class="prefecture"
-d="M40 690 L130 690 L130 760 L40 760 Z"/>
-
-<!-- 佐賀 -->
-<path id="佐賀県" class="prefecture"
-d="M0 720 L40 720 L40 760 L0 760 Z"/>
-
-<!-- 長崎 -->
-<path id="長崎県" class="prefecture"
-d="M0 790 L70 790 L70 860 L0 860 Z"/>
-
-<!-- 熊本 -->
-<path id="熊本県" class="prefecture"
-d="M80 780 L170 780 L170 900 L80 900 Z"/>
-
-<!-- 大分 -->
-<path id="大分県" class="prefecture"
-d="M170 760 L240 760 L240 860 L170 860 Z"/>
-
-<!-- 宮崎 -->
-<path id="宮崎県" class="prefecture"
-d="M180 910 L250 910 L250 1030 L180 1030 Z"/>
-
-<!-- 鹿児島 -->
-<path id="鹿児島県" class="prefecture"
-d="M70 1030 L170 1030 L170 1170 L70 1170 Z"/>
-
-<!-- 沖縄 -->
-<path id="沖縄県" class="prefecture"
-d="M60 1260 L120 1260 L120 1290 L60 1290 Z"/>
-
-</svg>
-
+<svg id="japan-map" viewBox="0 0 1000 1000"></svg>
 </div>
-
 </div>
-
-<!-- =========================
-MODAL
-========================= -->
 
 <div class="modal" id="modal">
-
 <div class="modal-content">
 
 <div class="modal-top">
-
 <div class="modal-title" id="modalTitle"></div>
-
-<button class="close-btn" onclick="closeModal()">
-閉じる
-</button>
-
+<button class="close-btn" onclick="closeModal()">閉じる</button>
 </div>
 
 <div class="album-create">
-
 <h3>新しいアルバムを作成</h3>
 
 <div class="create-row">
-
-<input
-type="text"
-id="albumName"
-placeholder="アルバム名を入力"
->
-
-<input
-type="color"
-id="albumColor"
-value="#10b981"
->
-
-<button
-class="create-btn"
-onclick="createAlbum()"
->
-アルバム作成
-</button>
-
+<input type="text" id="albumName" placeholder="アルバム名を入力">
+<input type="color" id="albumColor" value="#10b981">
+<button class="create-btn" onclick="createAlbum()">アルバム作成</button>
 </div>
-
 </div>
 
 <div class="album-list" id="albumList"></div>
 
 </div>
-
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
 
 <script>
 
-/* =========================
-GOOGLE DRIVE
-========================= */
+const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
+const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 
-const CLIENT_ID =
-'1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
-
-const API_KEY =
-'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
-
-const FOLDER_ID =
-'130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
-
-const DISCOVERY_DOC =
-'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-
-const SCOPES =
-'https://www.googleapis.com/auth/drive.file';
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
 
@@ -596,54 +286,63 @@ initializeGis();
 
 function initializeGis(){
 
-tokenClient =
-google.accounts.oauth2.initTokenClient({
-
+tokenClient = google.accounts.oauth2.initTokenClient({
 client_id:CLIENT_ID,
 scope:SCOPES,
-
 callback:(resp)=>{
-
 if(resp.error){
-
 showAlert('Google Drive接続失敗');
 return;
-
 }
-
 showAlert('Google Drive接続完了');
-
 }
-
 });
 
-tokenClient.requestAccessToken({
-prompt:'consent'
-});
+tokenClient.requestAccessToken({prompt:'consent'});
 
 }
 
 gapiLoaded();
 
-/* =========================
-ALBUM SYSTEM
-========================= */
-
 let currentPrefecture = '';
 let albumData = {};
 
-const modal =
-document.getElementById('modal');
+const modal = document.getElementById('modal');
 
-document.querySelectorAll('.prefecture')
-.forEach(pref=>{
+async function loadJapanMap(){
 
-pref.addEventListener('click',()=>{
+const response = await fetch(
+'https://raw.githubusercontent.com/dataofjapan/land/master/japan.topojson'
+);
 
-currentPrefecture = pref.id;
+const topoData = await response.json();
 
-document.getElementById('modalTitle')
-.innerText =
+const geojson = topojson.feature(
+topoData,
+topoData.objects.japan
+);
+
+const svg = d3.select('#japan-map');
+
+const projection = d3.geoMercator()
+.center([137,38])
+.scale(1800)
+.translate([500,500]);
+
+const path = d3.geoPath().projection(projection);
+
+svg.selectAll('path')
+.data(geojson.features)
+.enter()
+.append('path')
+.attr('d',path)
+.attr('class','prefecture')
+.attr('id',d=>d.properties.nam_ja)
+.on('click',(event,d)=>{
+
+currentPrefecture = d.properties.nam_ja;
+
+document.getElementById('modalTitle').innerText =
 currentPrefecture + ' のアルバム';
 
 modal.style.display='flex';
@@ -652,123 +351,85 @@ renderAlbums();
 
 });
 
-});
+}
+
+loadJapanMap();
 
 function closeModal(){
-
 modal.style.display='none';
-
 }
 
 function createAlbum(){
 
-const name =
-document.getElementById('albumName')
-.value
-.trim();
-
-const color =
-document.getElementById('albumColor')
-.value;
+const name = document.getElementById('albumName').value.trim();
+const color = document.getElementById('albumColor').value;
 
 if(!name){
-
 showAlert('アルバム名を入力してください');
 return;
-
 }
 
 if(!albumData[currentPrefecture]){
-
-albumData[currentPrefecture] = [];
-
+albumData[currentPrefecture]=[];
 }
 
 albumData[currentPrefecture].push({
-
 name:name,
 color:color,
 files:[]
-
 });
 
 paintPrefecture();
-
 renderAlbums();
 
-showAlert('アルバムを作成しました');
+showAlert('アルバム作成完了');
 
 }
 
 function renderAlbums(){
 
-const list =
-document.getElementById('albumList');
-
+const list = document.getElementById('albumList');
 list.innerHTML='';
 
-const albums =
-albumData[currentPrefecture] || [];
+const albums = albumData[currentPrefecture] || [];
 
 if(albums.length===0){
-
 list.innerHTML='<p>アルバムがありません</p>';
 return;
-
 }
 
 albums.forEach((album,index)=>{
 
-const card =
-document.createElement('div');
-
+const card = document.createElement('div');
 card.className='album-card';
+card.style.borderColor=album.color;
 
-card.style.borderColor = album.color;
-
-card.innerHTML = `
-
+card.innerHTML=`
 <div class="album-title">
-
-<span
-class="album-color"
-style="background:${album.color}"
-></span>
-
+<span class="album-color" style="background:${album.color}"></span>
 ${album.name}
-
 </div>
 
 <div class="album-actions">
 
 <label class="upload-btn">
-
-ファイルを追加
-
+写真・動画追加
 <input
+style="display:none"
 type="file"
 multiple
 accept="image/*,video/*"
-style="display:none"
 onchange="uploadFiles(${index},event)"
 >
-
 </label>
 
-<button
-class="delete-btn"
-onclick="deleteAlbum(${index})"
->
+<button class="delete-btn" onclick="deleteAlbum(${index})">
 削除
 </button>
 
 </div>
 
-<div
-class="gallery"
-id="gallery-${index}"
-></div>
-
+<div class="gallery" id="gallery-${index}"></div>
 `;
 
 list.appendChild(card);
@@ -781,38 +442,36 @@ renderGallery(index);
 
 function deleteAlbum(index){
 
-albumData[currentPrefecture]
-.splice(index,1);
-
-renderAlbums();
+albumData[currentPrefecture].splice(index,1);
 
 paintPrefecture();
+renderAlbums();
 
-showAlert('アルバムを削除しました');
+showAlert('アルバム削除完了');
 
 }
 
 function paintPrefecture(){
 
-document.querySelectorAll('.prefecture')
-.forEach(pref=>{
+const all = document.querySelectorAll('.prefecture');
 
-pref.style.fill='#ffffff';
-
+all.forEach(pref=>{
+pref.style.fill='white';
 });
 
-Object.keys(albumData)
-.forEach(pref=>{
+Object.keys(albumData).forEach(pref=>{
 
 const albums = albumData[pref];
 
 if(albums.length>0){
 
-const color =
-albums[albums.length-1].color;
+const color = albums[albums.length-1].color;
 
-document.getElementById(pref)
-.style.fill = color;
+const target = document.getElementById(pref);
+
+if(target){
+target.style.fill=color;
+}
 
 }
 
@@ -820,19 +479,12 @@ document.getElementById(pref)
 
 }
 
-/* =========================
-UPLOAD
-========================= */
-
 async function uploadFiles(albumIndex,event){
 
-const files =
-Array.from(event.target.files);
+const files = Array.from(event.target.files);
 
 for(const file of files){
-
 await uploadToDrive(file,albumIndex);
-
 }
 
 showAlert('アップロード完了');
@@ -841,72 +493,48 @@ showAlert('アップロード完了');
 
 async function uploadToDrive(file,albumIndex){
 
-const accessToken =
-gapi.client.getToken().access_token;
+const accessToken = gapi.client.getToken().access_token;
 
 const metadata = {
-
 name:file.name,
 parents:[FOLDER_ID]
-
 };
 
-const form =
-new FormData();
+const form = new FormData();
 
 form.append(
 'metadata',
-new Blob(
-[JSON.stringify(metadata)],
-{type:'application/json'}
-)
+new Blob([JSON.stringify(metadata)],{type:'application/json'})
 );
 
 form.append('file',file);
 
-const response =
-await fetch(
-
+const response = await fetch(
 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-
 {
 method:'POST',
-
 headers:new Headers({
 Authorization:'Bearer '+accessToken
 }),
-
 body:form
-
 }
-
 );
 
-const data =
-await response.json();
+const data = await response.json();
 
 await gapi.client.drive.permissions.create({
-
 fileId:data.id,
-
 resource:{
 role:'reader',
 type:'anyone'
 }
-
 });
 
-const url =
-'https://drive.google.com/uc?id='
-+ data.id;
+const url = 'https://drive.google.com/uc?id=' + data.id;
 
-albumData[currentPrefecture][albumIndex]
-.files
-.push({
-
+albumData[currentPrefecture][albumIndex].files.push({
 url:url,
 type:file.type
-
 });
 
 renderGallery(albumIndex);
@@ -915,35 +543,28 @@ renderGallery(albumIndex);
 
 function renderGallery(index){
 
-const gallery =
-document.getElementById(`gallery-${index}`);
+const gallery = document.getElementById(`gallery-${index}`);
 
 if(!gallery)return;
 
 gallery.innerHTML='';
 
-const files =
-albumData[currentPrefecture][index]
-.files;
+const files = albumData[currentPrefecture][index].files;
 
 files.forEach(file=>{
 
-const div =
-document.createElement('div');
+const div = document.createElement('div');
 
 if(file.type.startsWith('image')){
 
-div.innerHTML =
-`<img src="${file.url}">`;
+ div.innerHTML=`<img src="${file.url}">`;
 
 }else{
 
-div.innerHTML =
-`
-<video controls>
-<source src="${file.url}">
-</video>
-`;
+ div.innerHTML=`
+ <video controls>
+ <source src="${file.url}">
+ </video>`;
 
 }
 
@@ -953,35 +574,22 @@ gallery.appendChild(div);
 
 }
 
-/* =========================
-CUSTOM ALERT
-========================= */
-
 function showAlert(message){
 
-const alertBox =
-document.getElementById('customAlert');
+const box = document.getElementById('customAlert');
 
-alertBox.innerText = message;
-
-alertBox.style.display='block';
+box.innerText = message;
+box.style.display='block';
 
 setTimeout(()=>{
-
-alertBox.style.display='none';
-
+box.style.display='none';
 },2500);
 
 }
-
-/* =========================
-DISABLE DEFAULT ALERT
-========================= */
 
 window.alert = function(){};
 window.confirm = function(){return true;};
 
 </script>
-
 </body>
 </html>
