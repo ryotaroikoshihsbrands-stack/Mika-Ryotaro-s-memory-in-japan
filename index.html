@@ -71,7 +71,7 @@ svg{
 .modal-content{
   background:white;
   width:100%;
-  max-width:900px;
+  max-width:1000px;
   max-height:90vh;
   overflow-y:auto;
   border-radius:20px;
@@ -143,21 +143,30 @@ svg{
 
 .gallery{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
   gap:10px;
   margin-top:10px;
 }
 
-.photo-card img{
-  width:100%;
-  height:140px;
-  object-fit:cover;
+.media-card{
+  background:white;
   border-radius:10px;
+  overflow:hidden;
+  border:1px solid #ddd;
+  padding:10px;
+}
+
+.media-card img,
+.media-card video{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:8px;
 }
 
 .delete-btn{
   width:100%;
-  margin-top:5px;
+  margin-top:8px;
   background:#ef4444;
   color:white;
   border:none;
@@ -187,7 +196,7 @@ svg{
   font-weight:bold;
 }
 
-/* 独自確認モーダル */
+/* confirm */
 
 .confirm-overlay{
   position:fixed;
@@ -210,8 +219,8 @@ svg{
 
 .confirm-buttons{
   display:flex;
-  gap:10px;
   justify-content:center;
+  gap:10px;
   margin-top:20px;
 }
 
@@ -219,8 +228,8 @@ svg{
   border:none;
   padding:10px 20px;
   border-radius:10px;
-  cursor:pointer;
   color:white;
+  cursor:pointer;
 }
 
 .confirm-yes{
@@ -248,8 +257,6 @@ svg{
 class="custom-alert"
 id="customAlert"
 ></div>
-
-<!-- 独自confirm -->
 
 <div
 class="confirm-overlay"
@@ -299,7 +306,9 @@ onclick="closeConfirm()"
 class="close-btn"
 onclick="closeModal()"
 >
+
 閉じる
+
 </button>
 
 </div>
@@ -331,6 +340,61 @@ value="#10b981"
 
 <script>
 
+/* =========================
+   IndexedDB
+========================= */
+
+const DB_NAME = 'TravelAlbumDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'albums';
+
+let db;
+
+const request = indexedDB.open(
+DB_NAME,
+DB_VERSION
+);
+
+request.onupgradeneeded = event => {
+
+db = event.target.result;
+
+if(!db.objectStoreNames.contains(STORE_NAME)){
+
+db.createObjectStore(
+STORE_NAME,
+{ keyPath:'prefecture' }
+);
+
+}
+
+};
+
+request.onsuccess = event => {
+
+db = event.target.result;
+
+loadMap();
+
+};
+
+request.onerror = () => {
+
+showAlert('DB初期化失敗');
+
+};
+
+/* =========================
+   alert / confirm 無効化
+========================= */
+
+window.alert = function(){};
+window.confirm = function(){ return true; };
+
+/* =========================
+   要素
+========================= */
+
 const modal =
 document.getElementById('modal');
 
@@ -348,10 +412,9 @@ document.getElementById('confirmYes');
 
 let currentPrefecture = '';
 
-window.alert = function(){};
-window.confirm = function(){ return true; };
-
-/* 通知 */
+/* =========================
+   通知
+========================= */
 
 function showAlert(message){
 
@@ -370,7 +433,9 @@ alertBox.style.display = 'none';
 
 }
 
-/* 独自confirm */
+/* =========================
+   confirm
+========================= */
 
 function openConfirm(message, callback){
 
@@ -396,24 +461,69 @@ confirmOverlay.style.display = 'none';
 
 }
 
-function getData(){
+/* =========================
+   IndexedDB取得
+========================= */
 
-return JSON.parse(
-localStorage.getItem('travelAlbums') || '{}'
+function getPrefectureData(prefecture){
+
+return new Promise(resolve => {
+
+const transaction =
+db.transaction(
+[STORE_NAME],
+'readonly'
 );
+
+const store =
+transaction.objectStore(STORE_NAME);
+
+const req =
+store.get(prefecture);
+
+req.onsuccess = () => {
+
+resolve(req.result || {
+prefecture:prefecture,
+albums:[]
+});
+
+};
+
+});
 
 }
 
-function saveData(data){
+function savePrefectureData(data){
 
-localStorage.setItem(
-'travelAlbums',
-JSON.stringify(data)
+return new Promise(resolve => {
+
+const transaction =
+db.transaction(
+[STORE_NAME],
+'readwrite'
 );
+
+const store =
+transaction.objectStore(STORE_NAME);
+
+store.put(data);
+
+transaction.oncomplete = () => {
+
+resolve();
+
+};
+
+});
 
 }
 
-function openModal(pref){
+/* =========================
+   モーダル
+========================= */
+
+async function openModal(pref){
 
 currentPrefecture = pref;
 
@@ -422,7 +532,7 @@ pref + ' のアルバム';
 
 modal.style.display = 'flex';
 
-renderAlbums();
+await renderAlbums();
 
 }
 
@@ -432,16 +542,21 @@ modal.style.display = 'none';
 
 }
 
-function createAlbum(){
+/* =========================
+   アルバム作成
+========================= */
+
+async function createAlbum(){
 
 const name =
-document.getElementById('albumName')
-.value
-.trim();
+document.getElementById(
+'albumName'
+).value.trim();
 
 const color =
-document.getElementById('albumColor')
-.value;
+document.getElementById(
+'albumColor'
+).value;
 
 if(!name){
 
@@ -453,29 +568,26 @@ return;
 
 }
 
-const data = getData();
+const data =
+await getPrefectureData(
+currentPrefecture
+);
 
-if(!data[currentPrefecture]){
-
-data[currentPrefecture] = [];
-
-}
-
-data[currentPrefecture].push({
+data.albums.push({
 
 name:name,
 color:color,
-photos:[]
+media:[]
 
 });
 
-saveData(data);
+await savePrefectureData(data);
 
 document.getElementById(
 'albumName'
 ).value = '';
 
-renderAlbums();
+await renderAlbums();
 
 paintMap();
 
@@ -485,20 +597,29 @@ showAlert(
 
 }
 
+/* =========================
+   アルバム削除
+========================= */
+
 function deleteAlbum(albumIndex){
 
 openConfirm(
 'このアルバムを削除しますか？',
-function(){
+async function(){
 
-const data = getData();
+const data =
+await getPrefectureData(
+currentPrefecture
+);
 
-data[currentPrefecture]
-.splice(albumIndex,1);
+data.albums.splice(
+albumIndex,
+1
+);
 
-saveData(data);
+await savePrefectureData(data);
 
-renderAlbums();
+await renderAlbums();
 
 paintMap();
 
@@ -510,6 +631,10 @@ showAlert(
 );
 
 }
+
+/* =========================
+   ラジオ切替
+========================= */
 
 function toggleAlbumMode(albumIndex, mode){
 
@@ -547,12 +672,19 @@ deleteArea.classList.remove(
 
 }
 
-function renderAlbums(){
+/* =========================
+   描画
+========================= */
 
-const data = getData();
+async function renderAlbums(){
+
+const data =
+await getPrefectureData(
+currentPrefecture
+);
 
 const albums =
-data[currentPrefecture] || [];
+data.albums || [];
 
 albumList.innerHTML = '';
 
@@ -577,9 +709,7 @@ card.innerHTML = `
 <h3>${album.name}</h3>
 
 <p>
-
 色：
-
 <span style="
 display:inline-block;
 width:20px;
@@ -587,7 +717,6 @@ height:20px;
 background:${album.color};
 border-radius:50%;
 "></span>
-
 </p>
 
 <div class="album-radio-group">
@@ -601,7 +730,7 @@ checked
 onclick="toggleAlbumMode(${albumIndex}, 'upload')"
 >
 
-写真追加
+写真・動画追加
 
 </label>
 
@@ -624,8 +753,8 @@ onclick="toggleAlbumMode(${albumIndex}, 'delete')"
 <input
 type="file"
 multiple
-accept="image/*"
-onchange="uploadPhotos(${albumIndex}, event)"
+accept="image/*,video/*"
+onchange="uploadMedia(${albumIndex}, event)"
 >
 
 </div>
@@ -660,29 +789,52 @@ card.querySelector(
 `#gallery-${albumIndex}`
 );
 
-album.photos.forEach((photo, photoIndex) => {
+album.media.forEach((item, mediaIndex) => {
 
-const photoCard =
+const mediaCard =
 document.createElement('div');
 
-photoCard.className = 'photo-card';
+mediaCard.className = 'media-card';
 
-photoCard.innerHTML = `
+if(item.type.startsWith('image')){
 
-<img src="${photo}">
+mediaCard.innerHTML = `
+
+<img src="${item.data}">
 
 <button
 class="delete-btn"
-onclick="deletePhoto(${albumIndex}, ${photoIndex})"
+onclick="deleteMedia(${albumIndex}, ${mediaIndex})"
 >
 
-写真削除
+削除
 
 </button>
 
 `;
 
-gallery.appendChild(photoCard);
+}else{
+
+mediaCard.innerHTML = `
+
+<video controls>
+<source src="${item.data}">
+</video>
+
+<button
+class="delete-btn"
+onclick="deleteMedia(${albumIndex}, ${mediaIndex})"
+>
+
+削除
+
+</button>
+
+`;
+
+}
+
+gallery.appendChild(mediaCard);
 
 });
 
@@ -690,64 +842,154 @@ gallery.appendChild(photoCard);
 
 }
 
-function uploadPhotos(albumIndex, event){
+/* =========================
+   アップロード
+========================= */
+
+async function uploadMedia(albumIndex, event){
 
 const files =
 Array.from(event.target.files);
 
-const data = getData();
+const data =
+await getPrefectureData(
+currentPrefecture
+);
 
-let loaded = 0;
+for(const file of files){
 
-files.forEach(file => {
+const base64 =
+await compressFile(file);
 
-const reader = new FileReader();
+data.albums[albumIndex]
+.media
+.push({
 
-reader.onload = e => {
+type:file.type,
+data:base64
 
-data[currentPrefecture][albumIndex]
-.photos
-.push(e.target.result);
+});
 
-loaded++;
+}
 
-if(loaded === files.length){
+await savePrefectureData(data);
 
-saveData(data);
-
-renderAlbums();
+await renderAlbums();
 
 showAlert(
-'写真を追加しました'
+'保存しました'
 );
 
 }
+
+/* =========================
+   圧縮
+========================= */
+
+function compressFile(file){
+
+return new Promise(resolve => {
+
+if(file.type.startsWith('image')){
+
+const reader =
+new FileReader();
+
+reader.onload = e => {
+
+const img =
+new Image();
+
+img.onload = () => {
+
+const canvas =
+document.createElement('canvas');
+
+const maxWidth = 1200;
+
+const scale =
+maxWidth / img.width;
+
+canvas.width = maxWidth;
+canvas.height =
+img.height * scale;
+
+const ctx =
+canvas.getContext('2d');
+
+ctx.drawImage(
+img,
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+resolve(
+canvas.toDataURL(
+'image/jpeg',
+0.7
+)
+);
+
+};
+
+img.src = e.target.result;
 
 };
 
 reader.readAsDataURL(file);
 
+}else{
+
+const reader =
+new FileReader();
+
+reader.onload = e => {
+
+resolve(e.target.result);
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
 });
 
 }
 
-function deletePhoto(albumIndex, photoIndex){
+/* =========================
+   削除
+========================= */
 
-const data = getData();
+async function deleteMedia(
+albumIndex,
+mediaIndex
+){
 
-data[currentPrefecture][albumIndex]
-.photos
-.splice(photoIndex,1);
+const data =
+await getPrefectureData(
+currentPrefecture
+);
 
-saveData(data);
+data.albums[albumIndex]
+.media
+.splice(mediaIndex,1);
 
-renderAlbums();
+await savePrefectureData(data);
+
+await renderAlbums();
 
 showAlert(
-'写真を削除しました'
+'削除しました'
 );
 
 }
+
+/* =========================
+   モーダル外
+========================= */
 
 window.onclick = e => {
 
@@ -759,22 +1001,32 @@ closeModal();
 
 };
 
+/* =========================
+   地図
+========================= */
+
+function loadMap(){
+
 const width = 1000;
 const height = 1200;
 
 const svg = d3
 .select('#map')
 .append('svg')
-.attr('viewBox',
-`0 0 ${width} ${height}`);
+.attr(
+'viewBox',
+`0 0 ${width} ${height}`
+);
 
-const projection = d3.geoMercator()
+const projection =
+d3.geoMercator()
 .center([137,38])
 .scale(1700)
 .translate([width/2,height/2]);
 
 const path =
-d3.geoPath().projection(projection);
+d3.geoPath()
+.projection(projection);
 
 d3.json(
 'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson'
@@ -787,11 +1039,15 @@ svg.selectAll('path')
 .append('path')
 .attr('class','prefecture')
 .attr('d', path)
-.attr('id',
-d => d.properties.nam_ja)
+.attr(
+'id',
+d => d.properties.nam_ja
+)
 .on('click', (event,d) => {
 
-openModal(d.properties.nam_ja);
+openModal(
+d.properties.nam_ja
+);
 
 });
 
@@ -799,30 +1055,57 @@ paintMap();
 
 });
 
-function paintMap(){
+}
 
-const data = getData();
+/* =========================
+   色変更
+========================= */
+
+async function paintMap(){
+
+const transaction =
+db.transaction(
+[STORE_NAME],
+'readonly'
+);
+
+const store =
+transaction.objectStore(STORE_NAME);
+
+const request =
+store.getAll();
+
+request.onsuccess = () => {
+
+const allData =
+request.result;
 
 document
 .querySelectorAll('.prefecture')
 .forEach(pref => {
 
-const name = pref.id;
+pref.style.fill = 'white';
 
-const albums = data[name] || [];
+const target =
+allData.find(
+d => d.prefecture === pref.id
+);
 
-if(albums.length > 0){
+if(
+target &&
+target.albums.length > 0
+){
 
 pref.style.fill =
-albums[albums.length - 1].color;
-
-}else{
-
-pref.style.fill = 'white';
+target.albums[
+target.albums.length - 1
+].color;
 
 }
 
 });
+
+};
 
 }
 
