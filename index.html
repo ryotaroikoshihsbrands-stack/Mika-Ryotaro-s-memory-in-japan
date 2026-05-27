@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>国内旅行の思い出</title>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-<script src="https://accounts.google.com/gsi/client"></script>
 <script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client"></script>
 
 <style>
 
@@ -21,67 +20,37 @@ background:#f3f4f6;
 header{
 background:#111827;
 color:white;
-padding:20px;
+padding:18px;
+text-align:center;
 font-size:28px;
 font-weight:bold;
-text-align:center;
 }
 
-.topbar{
+#map-container{
 display:flex;
 justify-content:center;
-gap:10px;
-padding:15px;
-flex-wrap:wrap;
-}
-
-button{
-border:none;
-padding:12px 18px;
-border-radius:10px;
-cursor:pointer;
-font-weight:bold;
-}
-
-.login-btn{
-background:#2563eb;
-color:white;
-}
-
-.logout-btn{
-background:#ef4444;
-color:white;
-}
-
-.container{
 padding:20px;
-display:flex;
-justify-content:center;
-}
-
-#map{
-width:100%;
-max-width:1200px;
-background:white;
-padding:20px;
-border-radius:20px;
-box-shadow:0 4px 20px rgba(0,0,0,0.08);
 }
 
 svg{
 width:100%;
+max-width:1000px;
 height:auto;
+background:white;
+border-radius:20px;
+padding:20px;
+box-shadow:0 4px 20px rgba(0,0,0,0.1);
 }
 
-.prefecture{
+.pref{
 fill:white;
 stroke:#333;
-stroke-width:0.5;
+stroke-width:1;
 cursor:pointer;
 transition:0.2s;
 }
 
-.prefecture:hover{
+.pref:hover{
 opacity:0.8;
 }
 
@@ -113,8 +82,7 @@ flex-wrap:wrap;
 margin-bottom:20px;
 }
 
-.album-create input[type="text"]{
-flex:1;
+.album-create input{
 padding:10px;
 border-radius:10px;
 border:1px solid #ccc;
@@ -123,15 +91,15 @@ border:1px solid #ccc;
 .gallery{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-gap:10px;
-margin-top:10px;
+gap:12px;
+margin-top:15px;
 }
 
 .media-card{
 background:white;
 border:1px solid #ddd;
-border-radius:10px;
 padding:10px;
+border-radius:10px;
 }
 
 .media-card img,
@@ -144,10 +112,18 @@ border-radius:8px;
 
 .album-card{
 border:1px solid #ddd;
-border-radius:14px;
 padding:15px;
+border-radius:14px;
 margin-bottom:20px;
 background:#fafafa;
+}
+
+button{
+border:none;
+padding:10px 16px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
 }
 
 .custom-alert{
@@ -173,31 +149,25 @@ font-weight:bold;
 国内旅行の思い出
 </header>
 
-<div class="topbar">
+<div id="map-container">
 
-<button
-class="login-btn"
-onclick="handleAuthClick()"
->
-Googleログイン
-</button>
+<svg viewBox="0 0 1000 600">
 
-<button
-class="logout-btn"
-onclick="handleSignoutClick()"
->
-ログアウト
-</button>
+<path id="北海道" class="pref" d="M750 50 L850 50 L850 150 L750 150 Z"/>
+<path id="青森県" class="pref" d="M700 180 L760 180 L760 220 L700 220 Z"/>
+<path id="東京都" class="pref" d="M640 300 L680 300 L680 340 L640 340 Z"/>
+<path id="大阪府" class="pref" d="M560 340 L600 340 L600 380 L560 380 Z"/>
+<path id="福岡県" class="pref" d="M420 420 L470 420 L470 470 L420 470 Z"/>
+<path id="沖縄県" class="pref" d="M200 520 L260 520 L260 560 L200 560 Z"/>
 
-</div>
+</svg>
 
-<div class="container">
-<div id="map"></div>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
 
 <div class="modal" id="modal">
+
 <div class="modal-content">
 
 <h2 id="modalTitle"></h2>
@@ -205,14 +175,14 @@ onclick="handleSignoutClick()"
 <div class="album-create">
 
 <input
-id="albumName"
 type="text"
+id="albumName"
 placeholder="アルバム名"
 >
 
 <input
-id="albumColor"
 type="color"
+id="albumColor"
 value="#10b981"
 >
 
@@ -234,15 +204,16 @@ value="#10b981"
 <script>
 
 const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM;
+const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum?usp=drive_link';
 
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DISCOVERY_DOC =
+'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+const SCOPES =
+'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
-let gapiInited = false;
-let gisInited = false;
 let currentPrefecture = '';
 let albumData = {};
 
@@ -254,6 +225,7 @@ function showAlert(message){
 const box = document.getElementById('customAlert');
 
 box.innerText = message;
+
 box.style.display = 'block';
 
 setTimeout(()=>{
@@ -262,94 +234,64 @@ box.style.display = 'none';
 
 }
 
-async function gapiLoaded(){
+function gapiLoaded(){
 
-await gapi.load('client', initializeGapiClient);
-
-}
-
-async function initializeGapiClient(){
+gapi.load('client', async ()=>{
 
 await gapi.client.init({
 apiKey: API_KEY,
 discoveryDocs: [DISCOVERY_DOC],
 });
 
-gapiInited = true;
+initializeGis();
+
+});
 
 }
 
-function gisLoaded(){
+function initializeGis(){
 
 tokenClient = google.accounts.oauth2.initTokenClient({
 client_id: CLIENT_ID,
 scope: SCOPES,
-callback: '',
-});
+callback: async(resp)=>{
 
-gisInited = true;
-
-}
-
-function handleAuthClick(){
-
-if(!tokenClient){
-showAlert('Google API初期化中');
+if(resp.error){
+showAlert('Google認証失敗');
 return;
 }
 
-tokenClient.callback = async (resp) => {
+showAlert('Google Drive接続完了');
 
-if(resp.error !== undefined){
-throw(resp);
 }
+});
 
-showAlert('ログイン成功');
-
-await refreshAllAlbums();
-
-};
-
-if(gapi.client.getToken() === null){
-
-tokenClient.requestAccessToken({prompt: 'consent'});
-
-}else{
-
-tokenClient.requestAccessToken({prompt: ''});
+requestAccess();
 
 }
 
-}
+function requestAccess(){
 
-function handleSignoutClick(){
-
-const token = gapi.client.getToken();
-
-if(token !== null){
-
-google.accounts.oauth2.revoke(token.access_token);
-
-gapi.client.setToken('');
-
-showAlert('ログアウトしました');
+tokenClient.requestAccessToken({
+prompt:'consent'
+});
 
 }
 
-}
+gapiLoaded();
 
 const modal = document.getElementById('modal');
-const albumList = document.getElementById('albumList');
 
 function openModal(pref){
 
 currentPrefecture = pref;
 
-document.getElementById('modalTitle').innerText = pref + ' のアルバム';
+document.getElementById('modalTitle').innerText =
+pref + ' のアルバム';
 
 modal.style.display = 'flex';
 
-renderAlbums(pref);
+renderAlbums();
 
 }
 
@@ -357,18 +299,36 @@ function closeModal(){
 modal.style.display = 'none';
 }
 
+document.querySelectorAll('.pref').forEach(pref=>{
+
+pref.addEventListener('click',()=>{
+
+openModal(pref.id);
+
+});
+
+});
+
 function createAlbum(){
 
-const name = document.getElementById('albumName').value.trim();
-const color = document.getElementById('albumColor').value;
+const name =
+document.getElementById('albumName').value.trim();
+
+const color =
+document.getElementById('albumColor').value;
 
 if(!name){
+
 showAlert('アルバム名を入力してください');
+
 return;
+
 }
 
 if(!albumData[currentPrefecture]){
+
 albumData[currentPrefecture] = [];
+
 }
 
 albumData[currentPrefecture].push({
@@ -377,43 +337,48 @@ color:color,
 files:[]
 });
 
-renderAlbums(currentPrefecture);
 paintMap();
+
+renderAlbums();
 
 showAlert('アルバム作成完了');
 
 }
 
-function renderAlbums(pref){
+function renderAlbums(){
 
-albumList.innerHTML = '';
+const list = document.getElementById('albumList');
 
-const albums = albumData[pref] || [];
+list.innerHTML = '';
+
+const albums =
+albumData[currentPrefecture] || [];
 
 albums.forEach((album,index)=>{
 
-const card = document.createElement('div');
-card.className = 'album-card';
+const div = document.createElement('div');
 
-card.innerHTML = `
+div.className = 'album-card';
+
+div.innerHTML = `
 
 <h3>${album.name}</h3>
 
 <p>
 色：
 <span style="
-background:${album.color};
+display:inline-block;
 width:20px;
 height:20px;
-display:inline-block;
+background:${album.color};
 border-radius:50%;
 "></span>
 </p>
 
 <input
+type="file"
 multiple
 accept="image/*,video/*"
-type="file"
 onchange="uploadFiles(${index}, event)"
 >
 
@@ -421,9 +386,35 @@ onchange="uploadFiles(${index}, event)"
 
 `;
 
-albumList.appendChild(card);
+list.appendChild(div);
 
 renderGallery(index);
+
+});
+
+}
+
+function paintMap(){
+
+Object.keys(albumData).forEach(pref=>{
+
+const albums = albumData[pref];
+
+if(albums.length > 0){
+
+const latest =
+albums[albums.length - 1];
+
+const target =
+document.getElementById(pref);
+
+if(target){
+
+target.style.fill = latest.color;
+
+}
+
+}
 
 });
 
@@ -435,7 +426,7 @@ const files = Array.from(event.target.files);
 
 for(const file of files){
 
-await uploadToDrive(file, albumIndex);
+await uploadToDrive(file,albumIndex);
 
 }
 
@@ -445,12 +436,13 @@ showAlert('アップロード完了');
 
 async function uploadToDrive(file,albumIndex){
 
+const accessToken =
+gapi.client.getToken().access_token;
+
 const metadata = {
 name:file.name,
 parents:[FOLDER_ID]
 };
-
-const accessToken = gapi.client.getToken().access_token;
 
 const form = new FormData();
 
@@ -462,7 +454,7 @@ new Blob(
 )
 );
 
-form.append('file', file);
+form.append('file',file);
 
 const response = await fetch(
 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
@@ -485,10 +477,10 @@ type:'anyone'
 }
 });
 
-const fileUrl = `https://drive.google.com/uc?id=${data.id}`;
+const fileUrl =
+`https://drive.google.com/uc?id=${data.id}`;
 
 albumData[currentPrefecture][albumIndex].files.push({
-name:file.name,
 url:fileUrl,
 type:file.type
 });
@@ -499,28 +491,30 @@ renderGallery(albumIndex);
 
 function renderGallery(albumIndex){
 
-const gallery = document.getElementById(`gallery-${albumIndex}`);
+const gallery =
+document.getElementById(`gallery-${albumIndex}`);
 
 if(!gallery)return;
 
 gallery.innerHTML = '';
 
-const files = albumData[currentPrefecture][albumIndex].files;
+const files =
+albumData[currentPrefecture][albumIndex].files;
 
 files.forEach(file=>{
 
-const card = document.createElement('div');
-card.className = 'media-card';
+const div = document.createElement('div');
+
+div.className = 'media-card';
 
 if(file.type.startsWith('image')){
 
-card.innerHTML = `
-<img src="${file.url}">
-`;
+div.innerHTML =
+`<img src="${file.url}">`;
 
 }else{
 
-card.innerHTML = `
+div.innerHTML = `
 <video controls>
 <source src="${file.url}">
 </video>
@@ -528,82 +522,11 @@ card.innerHTML = `
 
 }
 
-gallery.appendChild(card);
+gallery.appendChild(div);
 
 });
 
 }
-
-function loadMap(){
-
-const width = 1000;
-const height = 1200;
-
-const svg = d3
-.select('#map')
-.append('svg')
-.attr('viewBox', `0 0 ${width} ${height}`);
-
-const projection = d3.geoMercator()
-.center([137,38])
-.scale(1700)
-.translate([width/2,height/2]);
-
-const path = d3.geoPath().projection(projection);
-
-d3.json(
-'https://raw.githubusercontent.com/dataofjapan/land/master/japan.geojson'
-)
-.then(data=>{
-
-svg.selectAll('path')
-.data(data.features)
-.enter()
-.append('path')
-.attr('class','prefecture')
-.attr('d',path)
-.attr('id',d=>d.properties.nam_ja)
-.on('click',(event,d)=>{
-openModal(d.properties.nam_ja);
-});
-
-paintMap();
-
-});
-
-}
-
-function paintMap(){
-
-Object.keys(albumData).forEach(pref=>{
-
-const albums = albumData[pref];
-
-if(albums.length > 0){
-
-const color = albums[albums.length - 1].color;
-
-const target = document.getElementById(pref);
-
-if(target){
-target.style.fill = color;
-}
-
-}
-
-});
-
-}
-
-async function refreshAllAlbums(){
-
-showAlert('Google Drive接続完了');
-
-}
-
-gapiLoaded();
-gisLoaded();
-loadMap();
 
 </script>
 
