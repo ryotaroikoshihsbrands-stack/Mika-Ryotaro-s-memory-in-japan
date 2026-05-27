@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <title>国内旅行の思い出</title>
 
@@ -20,13 +20,13 @@ background:#f3f4f6;
 header{
 background:#111827;
 color:white;
-padding:18px;
+padding:20px;
 text-align:center;
-font-size:28px;
+font-size:32px;
 font-weight:bold;
 }
 
-#map-container{
+#map-wrapper{
 display:flex;
 justify-content:center;
 padding:20px;
@@ -34,7 +34,7 @@ padding:20px;
 
 svg{
 width:100%;
-max-width:1000px;
+max-width:1200px;
 height:auto;
 background:white;
 border-radius:20px;
@@ -43,7 +43,7 @@ box-shadow:0 4px 20px rgba(0,0,0,0.1);
 }
 
 .pref{
-fill:white;
+fill:#ffffff;
 stroke:#333;
 stroke-width:1;
 cursor:pointer;
@@ -61,7 +61,7 @@ background:rgba(0,0,0,0.5);
 display:none;
 justify-content:center;
 align-items:center;
-z-index:999;
+z-index:9999;
 padding:20px;
 }
 
@@ -72,7 +72,7 @@ max-width:1000px;
 max-height:90vh;
 overflow-y:auto;
 border-radius:20px;
-padding:20px;
+padding:25px;
 }
 
 .album-create{
@@ -88,26 +88,12 @@ border-radius:10px;
 border:1px solid #ccc;
 }
 
-.gallery{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-gap:12px;
-margin-top:15px;
-}
-
-.media-card{
-background:white;
-border:1px solid #ddd;
-padding:10px;
+button{
+border:none;
+padding:10px 16px;
 border-radius:10px;
-}
-
-.media-card img,
-.media-card video{
-width:100%;
-height:180px;
-object-fit:cover;
-border-radius:8px;
+cursor:pointer;
+font-weight:bold;
 }
 
 .album-card{
@@ -118,12 +104,26 @@ margin-bottom:20px;
 background:#fafafa;
 }
 
-button{
-border:none;
-padding:10px 16px;
+.gallery{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+gap:12px;
+margin-top:15px;
+}
+
+.media-card{
+background:white;
 border-radius:10px;
-cursor:pointer;
-font-weight:bold;
+padding:10px;
+border:1px solid #ddd;
+}
+
+.media-card img,
+.media-card video{
+width:100%;
+height:180px;
+object-fit:cover;
+border-radius:8px;
 }
 
 .custom-alert{
@@ -136,8 +136,14 @@ color:white;
 padding:14px 20px;
 border-radius:12px;
 display:none;
-z-index:99999;
+z-index:999999;
 font-weight:bold;
+}
+
+.delete-btn{
+background:#ef4444;
+color:white;
+margin-top:10px;
 }
 
 </style>
@@ -149,16 +155,93 @@ font-weight:bold;
 国内旅行の思い出
 </header>
 
-<div id="map-container">
+<div id="map-wrapper">
 
-<svg viewBox="0 0 1000 600">
+<svg viewBox="0 0 1000 700">
 
-<path id="北海道" class="pref" d="M750 50 L850 50 L850 150 L750 150 Z"/>
-<path id="青森県" class="pref" d="M700 180 L760 180 L760 220 L700 220 Z"/>
-<path id="東京都" class="pref" d="M640 300 L680 300 L680 340 L640 340 Z"/>
-<path id="大阪府" class="pref" d="M560 340 L600 340 L600 380 L560 380 Z"/>
-<path id="福岡県" class="pref" d="M420 420 L470 420 L470 470 L420 470 Z"/>
-<path id="沖縄県" class="pref" d="M200 520 L260 520 L260 560 L200 560 Z"/>
+<!-- 北海道 -->
+<path id="北海道" class="pref"
+d="M760 80 L860 80 L900 140 L860 210 L760 200 L720 130 Z"/>
+
+<!-- 東北 -->
+<path id="青森県" class="pref"
+d="M700 230 L760 230 L760 270 L700 270 Z"/>
+
+<path id="岩手県" class="pref"
+d="M720 270 L770 270 L770 330 L720 330 Z"/>
+
+<path id="宮城県" class="pref"
+d="M690 330 L740 330 L740 370 L690 370 Z"/>
+
+<path id="秋田県" class="pref"
+d="M660 270 L710 270 L710 330 L660 330 Z"/>
+
+<path id="山形県" class="pref"
+d="M650 330 L700 330 L700 380 L650 380 Z"/>
+
+<path id="福島県" class="pref"
+d="M650 390 L720 390 L720 450 L650 450 Z"/>
+
+<!-- 関東 -->
+<path id="東京都" class="pref"
+d="M660 500 L700 500 L700 540 L660 540 Z"/>
+
+<path id="神奈川県" class="pref"
+d="M630 540 L690 540 L690 580 L630 580 Z"/>
+
+<path id="埼玉県" class="pref"
+d="M620 470 L680 470 L680 510 L620 510 Z"/>
+
+<path id="千葉県" class="pref"
+d="M700 500 L760 500 L760 600 L700 600 Z"/>
+
+<!-- 中部 -->
+<path id="新潟県" class="pref"
+d="M560 350 L650 350 L650 420 L560 420 Z"/>
+
+<path id="長野県" class="pref"
+d="M520 450 L620 450 L620 520 L520 520 Z"/>
+
+<path id="静岡県" class="pref"
+d="M540 540 L650 540 L650 590 L540 590 Z"/>
+
+<!-- 関西 -->
+<path id="大阪府" class="pref"
+d="M420 520 L470 520 L470 560 L420 560 Z"/>
+
+<path id="京都府" class="pref"
+d="M420 450 L500 450 L500 510 L420 510 Z"/>
+
+<path id="兵庫県" class="pref"
+d="M340 470 L430 470 L430 530 L340 530 Z"/>
+
+<!-- 中国 -->
+<path id="広島県" class="pref"
+d="M220 470 L320 470 L320 530 L220 530 Z"/>
+
+<path id="岡山県" class="pref"
+d="M320 470 L390 470 L390 520 L320 520 Z"/>
+
+<!-- 四国 -->
+<path id="愛媛県" class="pref"
+d="M260 560 L340 560 L340 600 L260 600 Z"/>
+
+<path id="香川県" class="pref"
+d="M330 530 L390 530 L390 560 L330 560 Z"/>
+
+<!-- 九州 -->
+<path id="福岡県" class="pref"
+d="M120 470 L200 470 L200 530 L120 530 Z"/>
+
+<path id="熊本県" class="pref"
+d="M120 540 L190 540 L190 610 L120 610 Z"/>
+
+<path id="鹿児島県" class="pref"
+d="M90 620 L170 620 L170 690 L90 690 Z"/>
+
+<!-- 沖縄 -->
+<path id="沖縄県" class="pref"
+d="M40 650 L90 650 L90 680 L40 680 Z"/>
 
 </svg>
 
@@ -186,7 +269,10 @@ id="albumColor"
 value="#10b981"
 >
 
-<button onclick="createAlbum()">
+<button
+style="background:#10b981;color:white;"
+onclick="createAlbum()"
+>
 アルバム作成
 </button>
 
@@ -194,11 +280,15 @@ value="#10b981"
 
 <div id="albumList"></div>
 
-<button onclick="closeModal()">
+<button
+style="background:#ef4444;color:white;"
+onclick="closeModal()"
+>
 閉じる
 </button>
 
 </div>
+
 </div>
 
 <script>
@@ -218,18 +308,19 @@ let currentPrefecture = '';
 let albumData = {};
 
 window.alert = function(){};
-window.confirm = function(){return true;};
+window.confirm = function(){ return true; };
 
 function showAlert(message){
 
-const box = document.getElementById('customAlert');
+const box =
+document.getElementById('customAlert');
 
 box.innerText = message;
 
 box.style.display = 'block';
 
 setTimeout(()=>{
-box.style.display = 'none';
+box.style.display='none';
 },2500);
 
 }
@@ -240,7 +331,7 @@ gapi.load('client', async ()=>{
 
 await gapi.client.init({
 apiKey: API_KEY,
-discoveryDocs: [DISCOVERY_DOC],
+discoveryDocs:[DISCOVERY_DOC]
 });
 
 initializeGis();
@@ -251,19 +342,25 @@ initializeGis();
 
 function initializeGis(){
 
-tokenClient = google.accounts.oauth2.initTokenClient({
+tokenClient =
+google.accounts.oauth2.initTokenClient({
+
 client_id: CLIENT_ID,
 scope: SCOPES,
-callback: async(resp)=>{
+
+callback:(resp)=>{
 
 if(resp.error){
+
 showAlert('Google認証失敗');
 return;
+
 }
 
 showAlert('Google Drive接続完了');
 
 }
+
 });
 
 requestAccess();
@@ -280,7 +377,8 @@ prompt:'consent'
 
 gapiLoaded();
 
-const modal = document.getElementById('modal');
+const modal =
+document.getElementById('modal');
 
 function openModal(pref){
 
@@ -289,14 +387,16 @@ currentPrefecture = pref;
 document.getElementById('modalTitle').innerText =
 pref + ' のアルバム';
 
-modal.style.display = 'flex';
+modal.style.display='flex';
 
 renderAlbums();
 
 }
 
 function closeModal(){
-modal.style.display = 'none';
+
+modal.style.display='none';
+
 }
 
 document.querySelectorAll('.pref').forEach(pref=>{
@@ -320,7 +420,6 @@ document.getElementById('albumColor').value;
 if(!name){
 
 showAlert('アルバム名を入力してください');
-
 return;
 
 }
@@ -332,9 +431,11 @@ albumData[currentPrefecture] = [];
 }
 
 albumData[currentPrefecture].push({
+
 name:name,
 color:color,
 files:[]
+
 });
 
 paintMap();
@@ -347,18 +448,27 @@ showAlert('アルバム作成完了');
 
 function renderAlbums(){
 
-const list = document.getElementById('albumList');
+const list =
+document.getElementById('albumList');
 
-list.innerHTML = '';
+list.innerHTML='';
 
 const albums =
 albumData[currentPrefecture] || [];
 
+if(albums.length===0){
+
+list.innerHTML='<p>アルバムはありません</p>';
+return;
+
+}
+
 albums.forEach((album,index)=>{
 
-const div = document.createElement('div');
+const div =
+document.createElement('div');
 
-div.className = 'album-card';
+div.className='album-card';
 
 div.innerHTML = `
 
@@ -379,10 +489,20 @@ border-radius:50%;
 type="file"
 multiple
 accept="image/*,video/*"
-onchange="uploadFiles(${index}, event)"
+onchange="uploadFiles(${index},event)"
 >
 
-<div class="gallery" id="gallery-${index}"></div>
+<button
+class="delete-btn"
+onclick="deleteAlbum(${index})"
+>
+アルバム削除
+</button>
+
+<div
+class="gallery"
+id="gallery-${index}"
+></div>
 
 `;
 
@@ -394,16 +514,34 @@ renderGallery(index);
 
 }
 
+function deleteAlbum(index){
+
+albumData[currentPrefecture].splice(index,1);
+
+renderAlbums();
+
+paintMap();
+
+showAlert('アルバム削除完了');
+
+}
+
 function paintMap(){
+
+document.querySelectorAll('.pref').forEach(pref=>{
+
+pref.style.fill='#ffffff';
+
+});
 
 Object.keys(albumData).forEach(pref=>{
 
 const albums = albumData[pref];
 
-if(albums.length > 0){
+if(albums.length>0){
 
 const latest =
-albums[albums.length - 1];
+albums[albums.length-1];
 
 const target =
 document.getElementById(pref);
@@ -422,7 +560,8 @@ target.style.fill = latest.color;
 
 async function uploadFiles(albumIndex,event){
 
-const files = Array.from(event.target.files);
+const files =
+Array.from(event.target.files);
 
 for(const file of files){
 
@@ -440,8 +579,10 @@ const accessToken =
 gapi.client.getToken().access_token;
 
 const metadata = {
+
 name:file.name,
 parents:[FOLDER_ID]
+
 };
 
 const form = new FormData();
@@ -461,7 +602,7 @@ const response = await fetch(
 {
 method:'POST',
 headers:new Headers({
-Authorization:'Bearer ' + accessToken
+Authorization:'Bearer '+accessToken
 }),
 body:form
 }
@@ -470,19 +611,25 @@ body:form
 const data = await response.json();
 
 await gapi.client.drive.permissions.create({
+
 fileId:data.id,
+
 resource:{
 role:'reader',
 type:'anyone'
 }
+
 });
 
 const fileUrl =
 `https://drive.google.com/uc?id=${data.id}`;
 
-albumData[currentPrefecture][albumIndex].files.push({
+albumData[currentPrefecture][albumIndex]
+.files.push({
+
 url:fileUrl,
 type:file.type
+
 });
 
 renderGallery(albumIndex);
@@ -496,16 +643,17 @@ document.getElementById(`gallery-${albumIndex}`);
 
 if(!gallery)return;
 
-gallery.innerHTML = '';
+gallery.innerHTML='';
 
 const files =
 albumData[currentPrefecture][albumIndex].files;
 
 files.forEach(file=>{
 
-const div = document.createElement('div');
+const div =
+document.createElement('div');
 
-div.className = 'media-card';
+div.className='media-card';
 
 if(file.type.startsWith('image')){
 
