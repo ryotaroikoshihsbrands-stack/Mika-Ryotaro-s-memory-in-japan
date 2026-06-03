@@ -506,7 +506,6 @@ function renderAlbums(){
   });
 }
 
-// 修正：ボタンタップ時に「即時」写真を生成してプレビューを展開する形に一本化
 function toggleGallery(index) {
   const gallery = document.getElementById(`gallery-${index}`);
   const btn = document.getElementById(`toggle-btn-${index}`);
@@ -515,7 +514,6 @@ function toggleGallery(index) {
     gallery.style.display = 'none';
     btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出をプレビュー`;
   } else {
-    // ボタンを押したその瞬間に画像を読み込んで生成
     renderGallery(index); 
     gallery.style.display = 'grid';
     btn.innerText = `▲ プレビューを閉じる`;
@@ -658,11 +656,10 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
     resource:{ role:'reader', type:'anyone' }
   });
 
-  const url = 'https://drive.google.com/uc?id=' + data.id;
-
+  // 改善：ブロック対策として、ファイルIDをオブジェクト内に独立して保存
   albumData[currentPrefecture][albumIndex].files.push({
-    url:url,
-    type:file.type
+    id: data.id, 
+    type: file.type
   });
 
   await saveAlbums();
@@ -675,17 +672,23 @@ function renderGallery(index){
 
   const files = albumData[currentPrefecture][index].files || [];
 
-  files.forEach(file=>{
+  files.forEach(file => {
+    // 過去データ（URL形式）でも新データ（ID形式）でも動くように互換処理
+    const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
+    if (!fileId) return;
+
+    // 【最重要変更】外部アクセス規制を回避する、Google提供のサムネイルURLを生成
+    const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+    const origUrl = `https://drive.google.com/uc?id=${fileId}`;
+
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    if(file.type.startsWith('image')){
-      itemDiv.innerHTML = `<img src="${file.url}" alt="思い出写真" onclick="window.open('${file.url}', '_blank')">`;
+    if(file.type && file.type.startsWith('image')){
+      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出写真" onclick="window.open('${origUrl}', '_blank')">`;
     }else{
-      itemDiv.innerHTML = `
-        <video onclick="window.open('${file.url}', '_blank')">
-          <source src="${file.url}">
-        </video>`;
+      // 動画の場合、Driveのサムネイルは静止画になりますが、クリックで大画面再生可能
+      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出動画" onclick="window.open('${origUrl}', '_blank')">`;
     }
     gallery.appendChild(itemDiv);
   });
