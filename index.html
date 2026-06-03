@@ -666,15 +666,19 @@ window.addEventListener('load', () => {
 
     if(user){
 
-      userInfo.innerText =
-        user.email;
+  userInfo.innerText =
+    'ログイン済み';
 
-    }else{
+  loginBtn.style.display = 'none';
 
-      userInfo.innerText =
-        '未ログイン';
+}else{
 
-    }
+  userInfo.innerText =
+    '未ログイン';
+
+  loginBtn.style.display = 'inline-block';
+
+}
 
   }
 );
