@@ -357,10 +357,11 @@ const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive';
+// 修正（元に戻す）：警告が出ない安全な「drive.file」スコープに再設定
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
-let lastGisResponse = null; // 改善：取得したトークン情報を記憶する領域
+let lastGisResponse = null;
 
 function gapiLoaded(){
   gapi.load('client', async()=>{
@@ -381,7 +382,7 @@ function initializeGis(){
         showAlert('Google Drive接続失敗: ' + resp.error);
         return;
       }
-      lastGisResponse = resp; // トークン情報を保存
+      lastGisResponse = resp;
       showAlert('Google Drive接続完了');
     }
   });
@@ -542,36 +543,41 @@ function paintPrefecture(){
   });
 }
 
+// フォルダを検索・または作成する関数
 async function getOrCreateFolder(folderName, parentId) {
-  const response = await gapi.client.drive.files.list({
-    q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`,
-    fields: 'files(id)'
-  });
-  
-  const files = response.result.files;
-  if (files && files.length > 0) {
-    return files[0].id;
-  } else {
-    const createResponse = await gapi.client.drive.files.create({
-      resource: {
-        name: folderName,
-        mimeType: 'application/vnd.google-apps.folder',
-        parents: [parentId]
-      },
-      fields: 'id'
+  try {
+    // drive.fileスコープの制限上、検索で見つからない場合はcatch文（新規作成）へスキップさせます
+    const response = await gapi.client.drive.files.list({
+      q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`,
+      fields: 'files(id)'
     });
-    return createResponse.result.id;
+    
+    const files = response.result.files;
+    if (files && files.length > 0) {
+      return files[0].id;
+    }
+  } catch(e) {
+    console.log("フォルダ検索をスキップし、新規作成を試みます");
   }
+  
+  // 見つからない、または制限で弾かれた場合は新規作成
+  const createResponse = await gapi.client.drive.files.create({
+    resource: {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId]
+    },
+    fields: 'id'
+  });
+  return createResponse.result.id;
 }
 
-// 改善：アップロード前にトークンの有無をチェックし、なければその場で要求する一連の流れ
 async function handleUploadSequence(albumIndex, event) {
   const files = Array.from(event.target.files);
   if(files.length === 0) return;
 
   const currentToken = gapi.client.getToken();
   
-  // トークンが取得できない場合は、ログインポップアップをその場で出して再取得させる
   if (!currentToken || !currentToken.access_token) {
     showAlert("Google Driveへの接続を確認しています。ポップアップが表示されたら許可してください。");
     
@@ -581,19 +587,15 @@ async function handleUploadSequence(albumIndex, event) {
         return;
       }
       lastGisResponse = resp;
-      // トークンが取れたらそのままアップロード処理へ進む
       await proceedWithUpload(albumIndex, files);
     };
     
-    // スマホ対応：ポップアップを促す
     tokenClient.requestAccessToken({ prompt: 'consent' });
   } else {
-    // すでにトークンがあればそのままアップロード
     await proceedWithUpload(albumIndex, files);
   }
 }
 
-// 実際のアップロード本番処理
 async function proceedWithUpload(albumIndex, files) {
   showAlert(`${files.length}件のファイルをアップロード中...`);
   let targetFolderId = FOLDER_ID; 
