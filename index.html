@@ -361,7 +361,7 @@ showAlert('Google Drive接続完了');
 }
 });
 
-tokenClient.requestAccessToken({prompt:'consent'});
+//tokenClient.requestAccessToken({prompt:'consent'});
 
 }
 
@@ -660,6 +660,24 @@ window.addEventListener('load', () => {
 
   const userInfo =
     document.getElementById('userInfo');
+  window.onAuthStateChanged(
+  window.auth,
+  (user) => {
+
+    if(user){
+
+      userInfo.innerText =
+        user.email;
+
+    }else{
+
+      userInfo.innerText =
+        '未ログイン';
+
+    }
+
+  }
+);
 
   loginBtn.addEventListener('click', async () => {
 
