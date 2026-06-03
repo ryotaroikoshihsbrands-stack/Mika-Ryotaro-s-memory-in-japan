@@ -24,7 +24,10 @@ import {
 from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 
 import {
-  getFirestore
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
 }
 from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
@@ -45,6 +48,10 @@ window.db = getFirestore(app);
 window.GoogleAuthProvider = GoogleAuthProvider;
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
+
+window.doc = doc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
 
 </script>
  
@@ -372,6 +379,50 @@ let albumData = {};
 
 const modal = document.getElementById('modal');
 
+async function saveAlbums(){
+
+const user = window.auth.currentUser;
+  
+  if(!user) return;
+
+  await window.setDoc(
+    window.doc(
+      window.db,
+      "albums",
+      user.uid
+    ),
+    {
+      data: albumData
+    }
+  );
+
+}
+
+async function loadAlbums(){
+
+const user = window.auth.currentUser;
+  
+  if(!user) return;
+
+  const snap = await window.getDoc(
+    window.doc(
+      window.db,
+      "albums",
+      user.uid
+    )
+  );
+
+  if(snap.exists()){
+
+    albumData =
+      snap.data().data || {};
+
+    paintPrefecture();
+
+  }
+
+}
+
 async function loadJapanMap(){
 
 const response = await fetch(
@@ -422,8 +473,8 @@ function closeModal(){
 modal.style.display='none';
 }
 
-function createAlbum(){
-
+async function createAlbum(){
+  
 const name = document.getElementById('albumName').value.trim();
 const color = document.getElementById('albumColor').value;
 
@@ -441,6 +492,8 @@ name:name,
 color:color,
 files:[]
 });
+
+await saveAlbums();
 
 paintPrefecture();
 renderAlbums();
@@ -503,9 +556,11 @@ renderGallery(index);
 
 }
 
-function deleteAlbum(index){
+async function deleteAlbum(index){
 
 albumData[currentPrefecture].splice(index,1);
+
+await saveAlbums();
 
 paintPrefecture();
 renderAlbums();
@@ -600,6 +655,8 @@ url:url,
 type:file.type
 });
 
+await saveAlbums();
+
 renderGallery(albumIndex);
 
 }
@@ -662,23 +719,21 @@ window.addEventListener('load', () => {
     document.getElementById('userInfo');
   window.onAuthStateChanged(
   window.auth,
-  (user) => {
+  async (user)=>{
 
     if(user){
 
-  userInfo.innerText =
-    'ログイン済み';
+      document.getElementById('userInfo')
+        .innerText = 'ログイン済み';
 
-  loginBtn.style.display = 'none';
+      await loadAlbums();
 
-}else{
+    }else{
 
-  userInfo.innerText =
-    '未ログイン';
+      document.getElementById('userInfo')
+        .innerText = '未ログイン';
 
-  loginBtn.style.display = 'inline-block';
-
-}
+    }
 
   }
 );
@@ -696,10 +751,14 @@ window.addEventListener('load', () => {
   provider
 );
 
-      userInfo.innerText =
-        result.user.email;
+userInfo.innerText =
+  'ログイン済み';
 
-      showAlert('ログイン成功');
+tokenClient.requestAccessToken({
+  prompt:'consent'
+});
+
+showAlert('ログイン成功');
 
     }catch(err){
 
