@@ -357,10 +357,10 @@ const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-// 修正：フォルダを正しく検索・操作できるよう権限スコープを「drive」に変更
 const SCOPES = 'https://www.googleapis.com/auth/drive';
 
 let tokenClient;
+let lastGisResponse = null; // 改善：取得したトークン情報を記憶する領域
 
 function gapiLoaded(){
   gapi.load('client', async()=>{
@@ -381,6 +381,7 @@ function initializeGis(){
         showAlert('Google Drive接続失敗: ' + resp.error);
         return;
       }
+      lastGisResponse = resp; // トークン情報を保存
       showAlert('Google Drive接続完了');
     }
   });
@@ -401,7 +402,7 @@ async function saveAlbums(){
 async function loadAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  const snap = await window.getDoc(window.doc(window.doc(window.db, "albums", user.uid)));
+  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
   if(snap.exists()){
     albumData = snap.data().data || {};
     paintPrefecture();
@@ -492,7 +493,7 @@ function renderAlbums(){
       <div class="album-actions">
         <label class="upload-btn">
           写真・動画追加
-          <input style="display:none" type="file" multiple accept="image/*,video/*" onchange="uploadFiles(${index},event)">
+          <input style="display:none" type="file" multiple accept="image/*,video/*" onchange="handleUploadSequence(${index},event)">
         </label>
         <button class="delete-btn" onclick="deleteAlbum(${index})">削除</button>
       </div>
@@ -563,22 +564,46 @@ async function getOrCreateFolder(folderName, parentId) {
   }
 }
 
-async function uploadFiles(albumIndex,event){
+// 改善：アップロード前にトークンの有無をチェックし、なければその場で要求する一連の流れ
+async function handleUploadSequence(albumIndex, event) {
   const files = Array.from(event.target.files);
   if(files.length === 0) return;
-  showAlert(`${files.length}件のファイルをアップロード中...`);
 
-  let targetFolderId = FOLDER_ID; // 初期値（失敗した場合は直下に保存する安全装置）
+  const currentToken = gapi.client.getToken();
+  
+  // トークンが取得できない場合は、ログインポップアップをその場で出して再取得させる
+  if (!currentToken || !currentToken.access_token) {
+    showAlert("Google Driveへの接続を確認しています。ポップアップが表示されたら許可してください。");
+    
+    tokenClient.callback = async (resp) => {
+      if (resp.error) {
+        showAlert("Driveのアクセス許可が降りませんでした: " + resp.error);
+        return;
+      }
+      lastGisResponse = resp;
+      // トークンが取れたらそのままアップロード処理へ進む
+      await proceedWithUpload(albumIndex, files);
+    };
+    
+    // スマホ対応：ポップアップを促す
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  } else {
+    // すでにトークンがあればそのままアップロード
+    await proceedWithUpload(albumIndex, files);
+  }
+}
+
+// 実際のアップロード本番処理
+async function proceedWithUpload(albumIndex, files) {
+  showAlert(`${files.length}件のファイルをアップロード中...`);
+  let targetFolderId = FOLDER_ID; 
 
   try {
-    // 1. 都道府県フォルダの取得・作成を試みる
     const prefFolderId = await getOrCreateFolder(currentPrefecture, FOLDER_ID);
-    // 2. アルバムフォルダの取得・作成を試みる
     const album = albumData[currentPrefecture][albumIndex];
     targetFolderId = await getOrCreateFolder(album.name, prefFolderId);
   } catch(err) {
-    console.warn("フォルダ階層化に失敗しました。ルート直下に保存します:", err);
-    // 階層化に失敗しても処理を止めず、FOLDER_IDの直下に保存する形にする
+    console.warn("フォルダ階層化に失敗したためルート直下に保存します:", err);
   }
 
   try {
@@ -602,9 +627,6 @@ async function uploadFiles(albumIndex,event){
 
 async function uploadToDrive(file, albumIndex, targetFolderId){
   const token = gapi.client.getToken();
-  if (!token) {
-    throw new Error("Google Driveのアクセストークンが取得できません。再ログインしてください。");
-  }
   const accessToken = token.access_token;
   const metadata = {
     name:file.name,
@@ -673,7 +695,7 @@ function showAlert(message){
   const box = document.getElementById('customAlert');
   box.innerText = message;
   box.style.display='block';
-  setTimeout(()=>{ box.style.display='none'; },4000); // 確認しやすいよう表示時間を4秒に延長
+  setTimeout(()=>{ box.style.display='none'; },4000); 
 }
 
 window.addEventListener('load', () => {
