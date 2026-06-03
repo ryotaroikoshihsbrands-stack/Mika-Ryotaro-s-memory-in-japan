@@ -45,13 +45,23 @@ font-family:"Yu Gothic",sans-serif;
 background:#f3f4f6;
 }
 
+/* 改善：タイトルの文字サイズをスマホ向けに小さく（28px）設定 */
 header{
 background:#0f172a;
 color:white;
-padding:28px;
+padding:20px;
 text-align:center;
-font-size:42px;
+font-size:28px;
 font-weight:bold;
+letter-spacing: 1px;
+}
+
+/* パソコン（画面幅76ローを超える場合）は元のサイズ感に戻す */
+@media (min-width: 768px) {
+  header {
+    font-size: 38px;
+    padding: 28px;
+  }
 }
 
 .main{
@@ -228,41 +238,45 @@ cursor:pointer;
 font-size: 14px;
 }
 
-/* 改善：通信量節約のための開閉（プレビュー）ボタン */
+/* PC・スマホ共通：通信量節約のための開閉（プレビュー）ボタン */
 .toggle-preview-btn {
 background: #f3f4f6;
 color: #4b5563;
 border: 1px solid #d1d5db;
-padding: 8px 12px;
+padding: 10px 12px;
 border-radius: 10px;
 cursor: pointer;
 font-weight: bold;
-font-size: 13px;
+font-size: 14px;
 margin-bottom: 10px;
 text-align: center;
-transition: background 0.2s;
+transition: background 0.2s, border-color 0.2s;
+display: block;
+width: 100%;
+box-sizing: border-box;
 }
 
 .toggle-preview-btn:hover {
 background: #e5e7eb;
+border-color: #9ca3af;
 }
 
-/* 改善：アルバム作成ページ内で見やすく整理されたギャラリー */
+/* PC・スマホ共通：アルバム作成ページ内で見やすく整理されたギャラリー */
 .gallery{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
+grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
 gap:8px;
 margin-top: 10px;
-max-height: 180px; /* 他のアルバムの邪魔をしないよう高さを制限 */
-overflow-y: auto;  /* 写真が多い場合はこの中でスクロール */
-padding: 4px;
+max-height: 200px; /* 写真が多い場合はこの中でスクロール */
+overflow-y: auto;  
+padding: 8px 4px;
 border-top: 1px dashed #e5e7eb;
-display: none; /* 初期状態は非表示（通信させない） */
+display: none; /* 初期状態は共通で非表示 */
 }
 
 .gallery-item {
 width: 100%;
-height: 70px;
+height: 80px;
 overflow: hidden;
 border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
@@ -492,7 +506,6 @@ function renderAlbums(){
   });
 }
 
-// 改善：ボタンが押されたら初めて画像データをレンダリング（通信開始）して表示する
 function toggleGallery(index) {
   const gallery = document.getElementById(`gallery-${index}`);
   const btn = document.getElementById(`toggle-btn-${index}`);
@@ -501,7 +514,6 @@ function toggleGallery(index) {
     gallery.style.display = 'none';
     btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出をプレビュー`;
   } else {
-    // 開く瞬間に初めて中身を生成する（無駄な通信を徹底防御）
     renderGallery(index);
     gallery.style.display = 'grid';
     btn.innerText = `▲ プレビューを閉じる`;
@@ -566,7 +578,6 @@ async function uploadFiles(albumIndex,event){
     }
     showAlert('アップロード完了');
     
-    // アップロード完了後、プレビューが開いていれば再描画、閉じていれば件数ボタンを更新
     const gallery = document.getElementById(`gallery-${albumIndex}`);
     const btn = document.getElementById(`toggle-btn-${albumIndex}`);
     if(gallery.style.display === 'grid') {
