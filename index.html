@@ -10,6 +10,44 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged
+}
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+import {
+  getFirestore
+}
+from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFm6c2kY-28xH_LkwooC_DUCGXXUgh2qA",
+  authDomain: "memories-of-domestic-tra-541db.firebaseapp.com",
+  projectId: "memories-of-domestic-tra-541db",
+  storageBucket: "memories-of-domestic-tra-541db.firebasestorage.app",
+  messagingSenderId: "381760330635",
+  appId: "1:381760330635:web:dfcdefd24167864268ad8e"
+};
+
+const app = initializeApp(firebaseConfig);
+
+window.auth = getAuth(app);
+window.db = getFirestore(app);
+
+window.GoogleAuthProvider = GoogleAuthProvider;
+window.signInWithPopup = signInWithPopup;
+window.onAuthStateChanged = onAuthStateChanged;
+
+</script>
+ 
 <style>
 
 body{
@@ -226,7 +264,32 @@ font-weight:bold;
 <header>
 国内旅行の思い出
 </header>
+<div style="
+text-align:center;
+padding:15px;
+background:white;
+">
 
+<button id="loginBtn"
+style="
+background:#4285F4;
+color:white;
+border:none;
+padding:12px 20px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+">
+Googleログイン
+</button>
+
+<div id="userInfo"
+style="margin-top:10px;font-weight:bold;">
+未ログイン
+</div>
+
+</div>
+ 
 <div class="main">
 <div class="map-wrapper">
 <svg id="japan-map" viewBox="0 0 1000 1000"></svg>
@@ -590,6 +653,43 @@ box.style.display='none';
 window.alert = function(){};
 window.confirm = function(){return true;};
 
+window.addEventListener('load', () => {
+
+  const loginBtn =
+    document.getElementById('loginBtn');
+
+  const userInfo =
+    document.getElementById('userInfo');
+
+  loginBtn.addEventListener('click', async () => {
+
+    try{
+
+      const provider =
+          new window.GoogleAuthProvider();
+
+      const result =
+          await window.signInWithPopup(
+  window.auth,
+  provider
+);
+
+      userInfo.innerText =
+        result.user.email;
+
+      showAlert('ログイン成功');
+
+    }catch(err){
+
+      console.error(err);
+
+      showAlert('ログイン失敗');
+
+    }
+
+  });
+
+});
 </script>
 </body>
 </html>
