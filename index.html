@@ -45,7 +45,6 @@ font-family:"Yu Gothic",sans-serif;
 background:#f3f4f6;
 }
 
-/* 改善：タイトルの文字サイズをスマホ向けに小さく（28px）設定 */
 header{
 background:#0f172a;
 color:white;
@@ -56,7 +55,6 @@ font-weight:bold;
 letter-spacing: 1px;
 }
 
-/* パソコン（画面幅76ローを超える場合）は元のサイズ感に戻す */
 @media (min-width: 768px) {
   header {
     font-size: 38px;
@@ -238,7 +236,6 @@ cursor:pointer;
 font-size: 14px;
 }
 
-/* PC・スマホ共通：通信量節約のための開閉（プレビュー）ボタン */
 .toggle-preview-btn {
 background: #f3f4f6;
 color: #4b5563;
@@ -261,17 +258,16 @@ background: #e5e7eb;
 border-color: #9ca3af;
 }
 
-/* PC・スマホ共通：アルバム作成ページ内で見やすく整理されたギャラリー */
 .gallery{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
 gap:8px;
 margin-top: 10px;
-max-height: 200px; /* 写真が多い場合はこの中でスクロール */
+max-height: 200px; 
 overflow-y: auto;  
 padding: 8px 4px;
 border-top: 1px dashed #e5e7eb;
-display: none; /* 初期状態は共通で非表示 */
+display: none; 
 }
 
 .gallery-item {
@@ -308,6 +304,8 @@ border-radius:12px;
 display:none;
 z-index:999999;
 font-weight:bold;
+max-width: 90%;
+word-break: break-all;
 }
 </style>
 </head>
@@ -359,7 +357,8 @@ const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+// 修正：フォルダを正しく検索・操作できるよう権限スコープを「drive」に変更
+const SCOPES = 'https://www.googleapis.com/auth/drive';
 
 let tokenClient;
 
@@ -379,7 +378,7 @@ function initializeGis(){
     scope:SCOPES,
     callback:(resp)=>{
       if(resp.error){
-        showAlert('Google Drive接続失敗');
+        showAlert('Google Drive接続失敗: ' + resp.error);
         return;
       }
       showAlert('Google Drive接続完了');
@@ -402,7 +401,7 @@ async function saveAlbums(){
 async function loadAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
+  const snap = await window.getDoc(window.doc(window.doc(window.db, "albums", user.uid)));
   if(snap.exists()){
     albumData = snap.data().data || {};
     paintPrefecture();
@@ -566,15 +565,25 @@ async function getOrCreateFolder(folderName, parentId) {
 
 async function uploadFiles(albumIndex,event){
   const files = Array.from(event.target.files);
+  if(files.length === 0) return;
   showAlert(`${files.length}件のファイルをアップロード中...`);
 
-  try {
-    const prefFolderId = await getOrCreateFolder(currentPrefecture, FOLDER_ID);
-    const album = albumData[currentPrefecture][albumIndex];
-    const albumFolderId = await getOrCreateFolder(album.name, prefFolderId);
+  let targetFolderId = FOLDER_ID; // 初期値（失敗した場合は直下に保存する安全装置）
 
+  try {
+    // 1. 都道府県フォルダの取得・作成を試みる
+    const prefFolderId = await getOrCreateFolder(currentPrefecture, FOLDER_ID);
+    // 2. アルバムフォルダの取得・作成を試みる
+    const album = albumData[currentPrefecture][albumIndex];
+    targetFolderId = await getOrCreateFolder(album.name, prefFolderId);
+  } catch(err) {
+    console.warn("フォルダ階層化に失敗しました。ルート直下に保存します:", err);
+    // 階層化に失敗しても処理を止めず、FOLDER_IDの直下に保存する形にする
+  }
+
+  try {
     for(const file of files){
-      await uploadToDrive(file, albumIndex, albumFolderId);
+      await uploadToDrive(file, albumIndex, targetFolderId);
     }
     showAlert('アップロード完了');
     
@@ -587,12 +596,16 @@ async function uploadFiles(albumIndex,event){
     }
   } catch(err) {
     console.error(err);
-    showAlert('フォルダ作成・保存に失敗しました');
+    showAlert('アップロード中にエラーが発生しました: ' + (err.message || err));
   }
 }
 
 async function uploadToDrive(file, albumIndex, targetFolderId){
-  const accessToken = gapi.client.getToken().access_token;
+  const token = gapi.client.getToken();
+  if (!token) {
+    throw new Error("Google Driveのアクセストークンが取得できません。再ログインしてください。");
+  }
+  const accessToken = token.access_token;
   const metadata = {
     name:file.name,
     parents:[targetFolderId]
@@ -610,6 +623,11 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
       body:form
     }
   );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Driveへの送信失敗(${response.status}): ${errText}`);
+  }
 
   const data = await response.json();
 
@@ -655,7 +673,7 @@ function showAlert(message){
   const box = document.getElementById('customAlert');
   box.innerText = message;
   box.style.display='block';
-  setTimeout(()=>{ box.style.display='none'; },2500);
+  setTimeout(()=>{ box.style.display='none'; },4000); // 確認しやすいよう表示時間を4秒に延長
 }
 
 window.addEventListener('load', () => {
@@ -680,7 +698,7 @@ window.addEventListener('load', () => {
       showAlert('ログイン成功');
     }catch(err){
       console.error(err);
-      showAlert('ログイン失敗');
+      showAlert('ログイン失敗: ' + err.message);
     }
   });
 });
