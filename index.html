@@ -357,7 +357,6 @@ const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
 
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-// 修正（元に戻す）：警告が出ない安全な「drive.file」スコープに再設定
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
@@ -507,6 +506,7 @@ function renderAlbums(){
   });
 }
 
+// 修正：ボタンタップ時に「即時」写真を生成してプレビューを展開する形に一本化
 function toggleGallery(index) {
   const gallery = document.getElementById(`gallery-${index}`);
   const btn = document.getElementById(`toggle-btn-${index}`);
@@ -515,7 +515,8 @@ function toggleGallery(index) {
     gallery.style.display = 'none';
     btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出をプレビュー`;
   } else {
-    renderGallery(index);
+    // ボタンを押したその瞬間に画像を読み込んで生成
+    renderGallery(index); 
     gallery.style.display = 'grid';
     btn.innerText = `▲ プレビューを閉じる`;
   }
@@ -543,10 +544,8 @@ function paintPrefecture(){
   });
 }
 
-// フォルダを検索・または作成する関数
 async function getOrCreateFolder(folderName, parentId) {
   try {
-    // drive.fileスコープの制限上、検索で見つからない場合はcatch文（新規作成）へスキップさせます
     const response = await gapi.client.drive.files.list({
       q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`,
       fields: 'files(id)'
@@ -560,7 +559,6 @@ async function getOrCreateFolder(folderName, parentId) {
     console.log("フォルダ検索をスキップし、新規作成を試みます");
   }
   
-  // 見つからない、または制限で弾かれた場合は新規作成
   const createResponse = await gapi.client.drive.files.create({
     resource: {
       name: folderName,
