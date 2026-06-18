@@ -336,14 +336,14 @@ word-break: break-all;
 <header>
 国内旅行の思い出
 </header>
-<div style="text-align:center;padding:15px;background:white; display:flex; justify-content:center; gap:10px; align-items:center; flex-wrap:wrap;">
-  <button id="loginBtn" style="background:#4285F4;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">
+<div style="text-align:center; padding:15px; background:white;">
+  <button id="loginBtn" style="background:#4285F4; color:white; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">
     Googleログイン
   </button>
-  <button id="logoutBtn" style="background:#e5e7eb;color:#374151;border:1px solid #d1d5db;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold; display:none;">
+  <button id="logoutBtn" style="background:#e5e7eb; color:#374151; border:1px solid #d1d5db; padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:bold; display:none;">
     ログアウト
   </button>
-  <div id="userInfo" style="font-weight:bold; width:100%; text-align:center; margin-top:5px;">
+  <div id="userInfo" style="font-weight:bold; margin-top:10px;">
     未ログイン
   </div>
 </div>
@@ -384,7 +384,6 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// 2人で共有するための固定ドキュメントID
 const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
 
 let tokenClient;
@@ -392,7 +391,7 @@ let lastGisResponse = null;
 let currentPrefecture = '';
 let albumData = {};
 let unsubscribeSnapshot = null;
-let isSaving = false; // 🔄 追加：保存中の自動同期による競合（バグ）を徹底ブロックするフラグ
+let isSaving = false;
 const modal = document.getElementById('modal');
 
 function gapiLoaded(){
@@ -426,13 +425,12 @@ async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
   
-  isSaving = true; // 競合防止ロックON
+  isSaving = true;
   try {
     await window.setDoc(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), { data: albumData });
   } catch(e) {
     console.error("保存失敗:", e);
   }
-  // タイムラグによる競合を完全に防ぐため、少し時間をおいてからロック解除
   setTimeout(() => { isSaving = false; }, 800);
 }
 
@@ -443,7 +441,6 @@ function startRealtimeSync(){
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
   unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
-    // 💡 修正の要：自分が保存処理中の場合は、この自動読み込みをスキップして画面の書き換えバグを防ぐ
     if (isSaving) return;
 
     if(docSnap.exists()){
@@ -479,6 +476,11 @@ async function loadJapanMap(){
     .attr('class','prefecture')
     .attr('id',d=>d.properties.nam_ja)
     .on('click',(event,d)=>{
+      // 💡 改善：未ログイン状態の時は地図をクリックしても反応しないように制御（安全対策）
+      if (!window.auth.currentUser) {
+        showAlert('ログイン後にアルバムを操作できます');
+        return;
+      }
       currentPrefecture = d.properties.nam_ja;
       document.getElementById('modalTitle').innerText = currentPrefecture + ' のアルバム';
       modal.style.display='flex';
@@ -511,13 +513,11 @@ async function createAlbum(){
     files:[]
   });
 
-  // 💡 修正の要：保存完了を待つ前に、自分の画面を最優先で即座に100%描き変える（ローカルファースト）
   paintPrefecture();
   renderAlbums();
   document.getElementById('albumName').value = '';
   showAlert('アルバム作成完了');
 
-  // その後に裏でデータベースへ安全に保存する
   await saveAlbums();
 }
 
@@ -585,7 +585,6 @@ async function confirmDeleteAlbum(index) {
   
   if (proceed) {
     albumData[currentPrefecture].splice(index,1);
-    // 削除も即座に画面へ反映
     paintPrefecture();
     renderAlbums();
     showAlert('アルバム削除完了');
@@ -722,7 +721,6 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
     uploader: user.uid
   });
 
-  // アップロード時もまず画面を即更新してから、裏で保存
   renderGallery(albumIndex);
   const btn = document.getElementById(`toggle-btn-${albumIndex}`);
   if(btn && document.getElementById(`gallery-${albumIndex}`).style.display !== 'grid') {
@@ -809,6 +807,7 @@ function showAlert(message){
   setTimeout(()=>{ box.style.display='none'; },4000); 
 }
 
+// 💡 修正の要：ボタンの登録順序と未ログイン時のリセット処理を安全な形に最適化
 window.addEventListener('load', () => {
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -823,4 +822,40 @@ window.addEventListener('load', () => {
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
-      logoutBtn.style.display
+      logoutBtn.style.display = 'none';
+      if(unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+      albumData = {}; 
+      // ❌ 以前のバグ：ここで白地図自体を白紙に戻して消してしまっていたのを修正
+      paintPrefecture(); // 地図の「着色」のみをリセットし、地図そのものは残す
+    }
+  });
+
+  loginBtn.addEventListener('click', async () => {
+    try{
+      const provider = new window.GoogleAuthProvider();
+      const result = await window.signInWithPopup(window.auth, provider);
+      userInfo.innerText = 'ログイン済み';
+      tokenClient.requestAccessToken({ prompt:'consent' });
+      showAlert('ログイン成功');
+    }catch(err){
+      console.error(err);
+      showAlert('ログイン失敗: ' + err.message);
+    }
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await window.signOut(window.auth);
+      showAlert('ログアウトしました');
+    } catch (err) {
+      console.error(err);
+      showAlert('ログアウトに失敗しました');
+    }
+  });
+});
+</script>
+</body>
+</html>
