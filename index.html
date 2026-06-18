@@ -13,7 +13,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFm6c2kY-28xH_LkwooC_DUCGXXUgh2qA",
@@ -36,7 +36,6 @@ window.onAuthStateChanged = onAuthStateChanged;
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
-window.onSnapshot = onSnapshot;
 </script>
  
 <style>
@@ -192,7 +191,6 @@ border:3px solid #e5e7eb;
 box-shadow:0 2px 10px rgba(0,0,0,0.06);
 display: flex;
 flex-direction: column;
-position: relative;
 }
 
 .album-title{
@@ -273,46 +271,25 @@ display: none;
 }
 
 .gallery-item {
-position: relative;
 width: 100%;
 height: 80px;
 overflow: hidden;
 border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 background: #e5e7eb;
-}
-
-.gallery-item img,
-.gallery-item video{
-width:100%;
-height:100%;
-object-fit:cover;
 cursor: pointer;
 transition: transform 0.2s;
 }
 
-.gallery-item img:hover {
+.gallery-item:hover {
 transform: scale(1.05);
 }
 
-.file-delete-btn {
-position: absolute;
-top: 2px;
-right: 2px;
-background: rgba(220, 38, 38, 0.85);
-color: white;
-border: none;
-border-radius: 4px;
-width: 20px;
-height: 20px;
-font-size: 12px;
-font-weight: bold;
-cursor: pointer;
-display: flex;
-align-items: center;
-justify-content: center;
-z-index: 10;
-box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+.gallery img,
+.gallery video{
+width:100%;
+height:100%;
+object-fit:cover;
 }
 
 .custom-alert{
@@ -382,13 +359,8 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
-
 let tokenClient;
 let lastGisResponse = null;
-let currentPrefecture = '';
-let albumData = {};
-const modal = document.getElementById('modal');
 
 function gapiLoaded(){
   gapi.load('client', async()=>{
@@ -417,26 +389,25 @@ function initializeGis(){
 
 gapiLoaded();
 
+let currentPrefecture = '';
+let albumData = {};
+const modal = document.getElementById('modal');
+
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  await window.setDoc(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), { data: albumData });
+  // 元の個人のUID配下に保存する形に完全に戻しました
+  await window.setDoc(window.doc(window.db, "albums", user.uid), { data: albumData });
 }
 
-// 修正：重複していたwindow.docの重なりを解消
-function listenToAlbums(){
+async function loadAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-
-  window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
-    if(docSnap.exists()){
-      albumData = docSnap.data().data || {};
-      paintPrefecture();
-      if(modal.style.display === 'flex') {
-        renderAlbums();
-      }
-    }
-  });
+  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
+  if(snap.exists()){
+    albumData = snap.data().data || {};
+    paintPrefecture();
+  }
 }
 
 async function loadJapanMap(){
@@ -476,7 +447,6 @@ function closeModal(){
 async function createAlbum(){
   const name = document.getElementById('albumName').value.trim();
   const color = document.getElementById('albumColor').value;
-  const user = window.auth.currentUser;
 
   if(!name){
     showAlert('アルバム名を入力してください');
@@ -490,11 +460,12 @@ async function createAlbum(){
   albumData[currentPrefecture].push({
     name:name,
     color:color,
-    files:[],
-    createdBy: user.uid 
+    files:[]
   });
 
   await saveAlbums();
+  paintPrefecture();
+  renderAlbums();
   document.getElementById('albumName').value = '';
   showAlert('アルバム作成完了');
 }
@@ -551,13 +522,16 @@ function toggleGallery(index) {
   }
 }
 
+// 改善：アルバム削除時の確認ダイアログ（名前置換対応）を維持
 async function confirmDeleteAlbum(index) {
   const albumName = albumData[currentPrefecture][index].name;
   const proceed = window.confirm(`本当に<${albumName}>を削除しますか`);
   
   if (proceed) {
-    albumData[currentPrefecture].splice(index, 1);
+    albumData[currentPrefecture].splice(index,1);
     await saveAlbums();
+    paintPrefecture();
+    renderAlbums();
     showAlert('アルバム削除完了');
   }
 }
@@ -660,8 +634,6 @@ async function proceedWithUpload(albumIndex, files) {
 async function uploadToDrive(file, albumIndex, targetFolderId){
   const token = gapi.client.getToken();
   const accessToken = token.access_token;
-  const user = window.auth.currentUser; 
-  
   const metadata = {
     name:file.name,
     parents:[targetFolderId]
@@ -694,8 +666,7 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
 
   albumData[currentPrefecture][albumIndex].files.push({
     id: data.id, 
-    type: file.type,
-    uploader: user.uid 
+    type: file.type
   });
 
   await saveAlbums();
@@ -706,10 +677,9 @@ function renderGallery(index){
   if(!gallery) return;
   gallery.innerHTML='';
 
-  const user = window.auth.currentUser;
   const files = albumData[currentPrefecture][index].files || [];
 
-  files.forEach((file, fileIndex) => {
+  files.forEach(file => {
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
@@ -719,30 +689,13 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    const isMyFile = !file.uploader || file.uploader === user.uid;
-    const deleteButtonHtml = isMyFile ? `<button class="file-delete-btn" onclick="deleteFile(${index}, ${fileIndex})">×</button>` : '';
-
     if(file.type && file.type.startsWith('image')){
-      itemDiv.innerHTML = `
-        ${deleteButtonHtml}
-        <img src="${thumbUrl}" alt="思い出写真" onclick="window.open('${origUrl}', '_blank')">`;
+      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出写真" onclick="window.open('${origUrl}', '_blank')">`;
     }else{
-      itemDiv.innerHTML = `
-        ${deleteButtonHtml}
-        <img src="${thumbUrl}" alt="思い出動画" onclick="window.open('${origUrl}', '_blank')">`;
+      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出動画" onclick="window.open('${origUrl}', '_blank')">`;
     }
     gallery.appendChild(itemDiv);
   });
-}
-
-async function deleteFile(albumIndex, fileIndex) {
-  const proceed = window.confirm("この写真/動画をアルバムから削除しますか？\n(Google Drive上の実ファイルは削除されません)");
-  if (!proceed) return;
-
-  albumData[currentPrefecture][albumIndex].files.splice(fileIndex, 1);
-  await saveAlbums();
-  renderGallery(albumIndex);
-  showAlert("ファイルを削除しました");
 }
 
 function showAlert(message){
@@ -759,7 +712,7 @@ window.addEventListener('load', () => {
   window.onAuthStateChanged(window.auth, async (user)=>{
     if(user){
       document.getElementById('userInfo').innerText = 'ログイン済み';
-      listenToAlbums(); 
+      await loadAlbums();
     }else{
       document.getElementById('userInfo').innerText = '未ログイン';
     }
@@ -770,7 +723,7 @@ window.addEventListener('load', () => {
       const provider = new window.GoogleAuthProvider();
       const result = await window.signInWithPopup(window.auth, provider);
       userInfo.innerText = 'ログイン済み';
-      tokenClient.requestAccessToken({ prompt: 'none', hint: result.user.email }); 
+      tokenClient.requestAccessToken({ prompt:'consent' });
       showAlert('ログイン成功');
     }catch(err){
       console.error(err);
