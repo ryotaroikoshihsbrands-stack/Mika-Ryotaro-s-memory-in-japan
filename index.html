@@ -36,7 +36,7 @@ window.onAuthStateChanged = onAuthStateChanged;
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
-window.onSnapshot = onSnapshot; // リアルタイム同期用に追加
+window.onSnapshot = onSnapshot;
 </script>
  
 <style>
@@ -295,7 +295,6 @@ transition: transform 0.2s;
 transform: scale(1.05);
 }
 
-/* 改善：写真個別の削除ボタン */
 .file-delete-btn {
 position: absolute;
 top: 2px;
@@ -380,11 +379,9 @@ const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleuse
 const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
 
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/rest';
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// 改善：2人で同じデータを共有するための固定キー（あなたのFirebase用ドキュメントID）
-// ※これにより、どちらのアカウントで入っても同じ日本地図・アルバムがロードされます。
 const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
 
 let tokenClient;
@@ -423,11 +420,10 @@ gapiLoaded();
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  // 共有ドキュメントIDに保存することで、2人のデータを統合
   await window.setDoc(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), { data: albumData });
 }
 
-// 改善：リアルタイムリスナーを設置（相手がアルバムや写真を追加したら自分の画面にも自動で即反映される）
+// 修正：重複していたwindow.docの重なりを解消
 function listenToAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
@@ -495,7 +491,7 @@ async function createAlbum(){
     name:name,
     color:color,
     files:[],
-    createdBy: user.uid // アルバム作成者のUIDを記録
+    createdBy: user.uid 
   });
 
   await saveAlbums();
@@ -555,11 +551,8 @@ function toggleGallery(index) {
   }
 }
 
-// 改善：アルバム削除時に選択した名前を置換して確認アラートを出すように変更
 async function confirmDeleteAlbum(index) {
   const albumName = albumData[currentPrefecture][index].name;
-  
-  // ブラウザ標準の確認ダイアログを使用（確定を検知するため、以前削除した機能を安全に復活）
   const proceed = window.confirm(`本当に<${albumName}>を削除しますか`);
   
   if (proceed) {
@@ -667,7 +660,7 @@ async function proceedWithUpload(albumIndex, files) {
 async function uploadToDrive(file, albumIndex, targetFolderId){
   const token = gapi.client.getToken();
   const accessToken = token.access_token;
-  const user = window.auth.currentUser; // 現在のログインユーザー情報を取得
+  const user = window.auth.currentUser; 
   
   const metadata = {
     name:file.name,
@@ -699,7 +692,6 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
     resource:{ role:'reader', type:'anyone' }
   });
 
-  // 改善：ファイル情報と一緒に「だれがアップロードしたか(uploader)」のUIDを保存
   albumData[currentPrefecture][albumIndex].files.push({
     id: data.id, 
     type: file.type,
@@ -727,7 +719,6 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    // 判定：自分がアップロードした写真、または昔のデータ（uploader未設定）の場合のみ×ボタンを出す
     const isMyFile = !file.uploader || file.uploader === user.uid;
     const deleteButtonHtml = isMyFile ? `<button class="file-delete-btn" onclick="deleteFile(${index}, ${fileIndex})">×</button>` : '';
 
@@ -744,7 +735,6 @@ function renderGallery(index){
   });
 }
 
-// 改善：写真の削除機能（自分の追加したものだけ実行可能）
 async function deleteFile(albumIndex, fileIndex) {
   const proceed = window.confirm("この写真/動画をアルバムから削除しますか？\n(Google Drive上の実ファイルは削除されません)");
   if (!proceed) return;
@@ -769,7 +759,7 @@ window.addEventListener('load', () => {
   window.onAuthStateChanged(window.auth, async (user)=>{
     if(user){
       document.getElementById('userInfo').innerText = 'ログイン済み';
-      listenToAlbums(); // リアルタイム同期を開始
+      listenToAlbums(); 
     }else{
       document.getElementById('userInfo').innerText = '未ログイン';
     }
@@ -780,7 +770,7 @@ window.addEventListener('load', () => {
       const provider = new window.GoogleAuthProvider();
       const result = await window.signInWithPopup(window.auth, provider);
       userInfo.innerText = 'ログイン済み';
-      tokenClient.requestAccessToken({ prompt: 'none', hint: result.user.email }); // 許可画面のスキップを試みる
+      tokenClient.requestAccessToken({ prompt: 'none', hint: result.user.email }); 
       showAlert('ログイン成功');
     }catch(err){
       console.error(err);
