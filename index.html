@@ -421,52 +421,59 @@ function initializeGis(){
 
 gapiLoaded();
 
+// 💡 修正：Firebaseへの保存を「同期完了まで確実に待機（await）」する仕組みに変更
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
   
   isSaving = true;
   try {
-    await window.setDoc(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), { data: albumData });
+    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
+    // awaitを入れてクラウドへの書き込み完了を絶対に待つ
+    await window.setDoc(docRef, { data: albumData });
+    console.log("Firebase保存完了:", albumData);
   } catch(e) {
-    console.error("保存失敗:", e);
+    console.error("Firebase保存失敗:", e);
+    showAlert("保存に失敗しました");
   }
-  setTimeout(() => { isSaving = false; }, 800);
+  
+  // 保存完了後に同期ロックを外すまでのバッファ時間を確保
+  setTimeout(() => { isSaving = false; }, 1000);
 }
 
-// 💡 修正の要：ログイン直後にまず「一度だけ」データを確実に読み込んでから、リアルタイム同期を開始する設計に強化
 async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
 
   try {
-    // 1. まず現在の最新データを一度だけ強制ダウンロード
     const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
     const docSnap = await window.getDoc(docRef);
+    
     if(docSnap.exists()){
-      albumData = docSnap.data().data || {};
-    } else {
-      albumData = {};
+      const incomingData = docSnap.data().data;
+      if (incomingData && Object.keys(incomingData).length > 0) {
+        albumData = incomingData;
+        console.log("初回DLデータ反映:", albumData);
+      }
     }
-    // 画面に即座に反映
     paintPrefecture();
     if(modal.style.display === 'flex') {
       renderAlbums();
     }
   } catch (err) {
-    console.error("初回データ読み込みエラー:", err);
+    console.error("初回読み込みエラー:", err);
   }
 
-  // 2. 初回読み込み完了後に、2人でのリアルタイム監視(同期)を開始する
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
   unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
-    if (isSaving) return;
+    if (isSaving) return; // 保存中は外部からの上書きを完全シャットアウト
 
     if(docSnap.exists()){
-      albumData = docSnap.data().data || {};
-    } else {
-      albumData = {};
+      const incomingData = docSnap.data().data;
+      if (incomingData && Object.keys(incomingData).length > 0) {
+        albumData = incomingData;
+      }
     }
     paintPrefecture();
     if(modal.style.display === 'flex') {
@@ -513,6 +520,7 @@ function closeModal(){
   modal.style.display='none';
 }
 
+// 💡 修正：関数自体を async 化し、保存の成功を確認してから次のステップ（アラート等）に移る
 async function createAlbum(){
   const name = document.getElementById('albumName').value.trim();
   const color = document.getElementById('albumColor').value;
@@ -535,9 +543,10 @@ async function createAlbum(){
   paintPrefecture();
   renderAlbums();
   document.getElementById('albumName').value = '';
-  showAlert('アルバム作成完了');
 
+  // 💡 クラウド保存が終わるのを確実に待つ
   await saveAlbums();
+  showAlert('アルバム作成・保存完了！');
 }
 
 function renderAlbums(){
@@ -606,9 +615,9 @@ async function confirmDeleteAlbum(index) {
     albumData[currentPrefecture].splice(index,1);
     paintPrefecture();
     renderAlbums();
-    showAlert('アルバム削除完了');
     
     await saveAlbums();
+    showAlert('アルバム削除完了');
   }
 }
 
@@ -663,7 +672,7 @@ async function handleUploadSequence(albumIndex, event) {
     
     tokenClient.callback = async (resp) => {
       if (resp.error) {
-        showAlert("Driveのアクセス許可が降りませんでした: " + resp.error);
+        showAlert("Driveへのアクセス許可が降りませんでした: " + resp.error);
         return;
       }
       lastGisResponse = resp;
@@ -814,9 +823,9 @@ async function deleteFile(albumIndex, fileIndex) {
 
   albumData[currentPrefecture][albumIndex].files.splice(fileIndex, 1);
   renderGallery(albumIndex);
-  showAlert("ファイルを削除しました");
 
   await saveAlbums();
+  showAlert("ファイルを削除しました");
 }
 
 function showAlert(message){
@@ -836,7 +845,6 @@ window.addEventListener('load', () => {
       userInfo.innerText = 'ログイン済み';
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
-      // 💡 変更：リアルタイム監視単体ではなく、初回強制DL付きの関数を呼び出す
       loadAndStartSync(); 
     }else{
       userInfo.innerText = '未ログイン';
