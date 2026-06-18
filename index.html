@@ -13,7 +13,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDFm6c2kY-28xH_LkwooC_DUCGXXUgh2qA",
@@ -32,11 +32,12 @@ window.db = getFirestore(app);
 window.GoogleAuthProvider = GoogleAuthProvider;
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
-window.signOut = signOut; // ログアウト用に追加
+window.signOut = signOut;
 
 window.doc = doc;
 window.setDoc = setDoc;
 window.getDoc = getDoc;
+window.onSnapshot = onSnapshot; // 同期用
 </script>
  
 <style>
@@ -272,25 +273,46 @@ display: none;
 }
 
 .gallery-item {
+position: relative; /* ×ボタン配置用 */
 width: 100%;
 height: 80px;
 overflow: hidden;
 border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 background: #e5e7eb;
+}
+
+.gallery-item img {
+width:100%;
+height:100%;
+object-fit:cover;
 cursor: pointer;
 transition: transform 0.2s;
 }
 
-.gallery-item:hover {
+.gallery-item img:hover {
 transform: scale(1.05);
 }
 
-.gallery img,
-.gallery video{
-width:100%;
-height:100%;
-object-fit:cover;
+/* 自分が追加した写真にだけ出る削除ボタンのスタイル */
+.file-delete-btn {
+position: absolute;
+top: 2px;
+right: 2px;
+background: rgba(220, 38, 38, 0.85);
+color: white;
+border: none;
+border-radius: 4px;
+width: 20px;
+height: 20px;
+font-size: 12px;
+font-weight: bold;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+z-index: 10;
+box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .custom-alert{
@@ -363,8 +385,15 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+// 2人で共有するための固定ドキュメントID
+const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
+
 let tokenClient;
 let lastGisResponse = null;
+let currentPrefecture = '';
+let albumData = {};
+let unsubscribeSnapshot = null; // リアルタイム監視を安全に解除するための変数
+const modal = document.getElementById('modal');
 
 function gapiLoaded(){
   gapi.load('client', async()=>{
@@ -393,24 +422,33 @@ function initializeGis(){
 
 gapiLoaded();
 
-let currentPrefecture = '';
-let albumData = {};
-const modal = document.getElementById('modal');
-
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  await window.setDoc(window.doc(window.db, "albums", user.uid), { data: albumData });
+  // 共有エリアに保存
+  await window.setDoc(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), { data: albumData });
 }
 
-async function loadAlbums(){
+// 改善（バグ修正版）：リアルタイム監視と画面更新を完全に一本化
+function startRealtimeSync(){
   const user = window.auth.currentUser;
   if(!user) return;
-  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
-  if(snap.exists()){
-    albumData = snap.data().data || {};
+
+  // すでに監視中なら一旦解除（二重登録を防ぐ）
+  if(unsubscribeSnapshot) unsubscribeSnapshot();
+
+  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
+    if(docSnap.exists()){
+      albumData = docSnap.data().data || {};
+    } else {
+      albumData = {};
+    }
     paintPrefecture();
-  }
+    // モーダルが開いている時だけ、中のアルバム一覧をリフレッシュする
+    if(modal.style.display === 'flex') {
+      renderAlbums();
+    }
+  });
 }
 
 async function loadJapanMap(){
@@ -466,9 +504,8 @@ async function createAlbum(){
     files:[]
   });
 
+  // 保存（保存すると自動的にonSnapshotが検知してrenderAlbumsまで実行してくれます）
   await saveAlbums();
-  paintPrefecture();
-  renderAlbums();
   document.getElementById('albumName').value = '';
   showAlert('アルバム作成完了');
 }
@@ -490,6 +527,10 @@ function renderAlbums(){
 
     const fileCount = album.files ? album.files.length : 0;
 
+    // プレビューが開いているか閉じているかの状態を維持するための判定
+    const existingGallery = document.getElementById(`gallery-${index}`);
+    const isOpened = existingGallery ? (existingGallery.style.display === 'grid') : false;
+
     card.innerHTML = `
       <div class="album-title">
         <span class="album-color" style="background:${album.color}"></span>
@@ -503,11 +544,16 @@ function renderAlbums(){
         <button class="delete-btn" onclick="confirmDeleteAlbum(${index})">削除</button>
       </div>
       <button class="toggle-preview-btn" id="toggle-btn-${index}" onclick="toggleGallery(${index})">
-        📸 ${fileCount}件の思い出をプレビュー
+        ${isOpened ? '▲ プレビューを閉じる' : `📸 ${fileCount}件の思い出をプレビュー`}
       </button>
-      <div class="gallery" id="gallery-${index}"></div>
+      <div class="gallery" id="gallery-${index}" style="display: ${isOpened ? 'grid' : 'none'};"></div>
     `;
     list.appendChild(card);
+    
+    // 開いていた場合は中身も再描画する
+    if(isOpened) {
+      renderGallery(index);
+    }
   });
 }
 
@@ -532,8 +578,6 @@ async function confirmDeleteAlbum(index) {
   if (proceed) {
     albumData[currentPrefecture].splice(index,1);
     await saveAlbums();
-    paintPrefecture();
-    renderAlbums();
     showAlert('アルバム削除完了');
   }
 }
@@ -619,14 +663,6 @@ async function proceedWithUpload(albumIndex, files) {
       await uploadToDrive(file, albumIndex, targetFolderId);
     }
     showAlert('アップロード完了');
-    
-    const gallery = document.getElementById(`gallery-${albumIndex}`);
-    const btn = document.getElementById(`toggle-btn-${albumIndex}`);
-    if(gallery.style.display === 'grid') {
-      renderGallery(albumIndex);
-    } else {
-      btn.innerText = `📸 ${albumData[currentPrefecture][albumIndex].files.length}件の思い出をプレビュー`;
-    }
   } catch(err) {
     console.error(err);
     showAlert('アップロード中にエラーが発生しました: ' + (err.message || err));
@@ -636,6 +672,8 @@ async function proceedWithUpload(albumIndex, files) {
 async function uploadToDrive(file, albumIndex, targetFolderId){
   const token = gapi.client.getToken();
   const accessToken = token.access_token;
+  const user = window.auth.currentUser; // アップローダー識別のためにユーザー情報を取得
+  
   const metadata = {
     name:file.name,
     parents:[targetFolderId]
@@ -666,25 +704,27 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
     resource:{ role:'reader', type:'anyone' }
   });
 
+  // 改善要素①：ファイルのID、タイプと一緒に「誰が追加したか(uploader)」を記録
   albumData[currentPrefecture][albumIndex].files.push({
     id: data.id, 
-    type: file.type
+    type: file.type,
+    uploader: user.uid
   });
 
   await saveAlbums();
 }
 
-// ③ 【スマホ対応強化】安全なAPI経由で画像を取得し描画する仕組み
 function renderGallery(index){
   const gallery = document.getElementById(`gallery-${index}`);
   if(!gallery) return;
   gallery.innerHTML='';
 
+  const user = window.auth.currentUser;
   const files = albumData[currentPrefecture][index].files || [];
   const token = gapi.client.getToken();
   const accessToken = token ? token.access_token : null;
 
-  files.forEach(file => {
+  files.forEach((file, fileIndex) => {
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
@@ -693,12 +733,23 @@ function renderGallery(index){
     
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
     
-    // どんなブラウザでも規制を100%回避する、img要素を生成
+    // 改善要素①（C案）：自分がアップロードした写真、または昔のデータ（uploader未設定）の場合のみ×ボタンを配置
+    const isMyFile = !file.uploader || file.uploader === user.uid;
+    if (isMyFile) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'file-delete-btn';
+      delBtn.innerText = '×';
+      delBtn.onclick = (e) => {
+        e.stopPropagation(); // 拡大イベントへの連鎖を止める
+        deleteFile(index, fileIndex);
+      };
+      itemDiv.appendChild(delBtn);
+    }
+    
     const imgEl = document.createElement('img');
     imgEl.alt = "思い出";
     imgEl.onclick = () => window.open(origUrl, '_blank');
     
-    // スマホブラウザのセキュリティブロックをバイパスする、認証付き画像読み込み
     if (accessToken) {
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${accessToken}` }
@@ -709,10 +760,9 @@ function renderGallery(index){
       })
       .then(blob => {
         const blobUrl = URL.createObjectURL(blob);
-        imgEl.src = blobUrl; // スマホ内の一時安全URLに変換してセット
+        imgEl.src = blobUrl;
       })
       .catch(() => {
-        // 万が一API取得に失敗した場合は、フォールバックとしてサムネイルURLを試す
         imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
       });
     } else {
@@ -722,6 +772,16 @@ function renderGallery(index){
     itemDiv.appendChild(imgEl);
     gallery.appendChild(itemDiv);
   });
+}
+
+// 改善要素①：個別の写真・動画を削除する関数
+async function deleteFile(albumIndex, fileIndex) {
+  const proceed = window.confirm("この写真/動画をアルバムから削除しますか？\n(Google Drive上の元のファイルは削除されません)");
+  if (!proceed) return;
+
+  albumData[currentPrefecture][albumIndex].files.splice(fileIndex, 1);
+  await saveAlbums();
+  showAlert("ファイルを削除しました");
 }
 
 function showAlert(message){
@@ -740,14 +800,18 @@ window.addEventListener('load', () => {
     if(user){
       userInfo.innerText = 'ログイン済み';
       loginBtn.style.display = 'none';
-      logoutBtn.style.display = 'inline-block'; // ログアウトボタンを表示
-      await loadAlbums();
+      logoutBtn.style.display = 'inline-block';
+      startRealtimeSync(); // リアルタイム同期システムを起動
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
-      logoutBtn.style.display = 'none'; // ログアウトボタンを非表示
-      albumData = {}; // データをリセット
-      paintPrefecture(); // 地図の色をクリア
+      logoutBtn.style.display = 'none';
+      if(unsubscribeSnapshot) {
+        unsubscribeSnapshot(); // ログアウト時は見張りを安全に解除
+        unsubscribeSnapshot = null;
+      }
+      albumData = {}; 
+      paintPrefecture(); 
     }
   });
 
@@ -764,7 +828,6 @@ window.addEventListener('load', () => {
     }
   });
 
-  // ② ログアウトボタンのクリックイベント追加
   logoutBtn.addEventListener('click', async () => {
     try {
       await window.signOut(window.auth);
