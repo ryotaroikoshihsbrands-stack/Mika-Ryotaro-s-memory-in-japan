@@ -373,8 +373,8 @@ async function loadJapanMap(){
     if (!response.ok) throw new Error('地図ファイルへのアクセスに失敗しました');
     const topoData = await response.json();
     
-    // 💡 修正：あなたのjapan.jsonの構造「collection」に完全に一致させ、クラッシュを修正
-    const geojson = topojson.feature(topoData, topoData.objects.collection);
+    // 💡 修正：あなたのjapan.jsonの構造に100%合致する「topoData.objects.japan」に固定して完全解決
+    const geojson = topojson.feature(topoData, topoData.objects.japan);
     const svg = d3.select('#japan-map');
 
     const projection = d3.geoMercator().center([137,38]).scale(1800).translate([500,500]);
