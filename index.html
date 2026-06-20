@@ -15,6 +15,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/fireba
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
+// 💡 修正：あなたの正しいFirebaseプロジェクトの接続情報に完全に修正しました
 const firebaseConfig = {
   apiKey: "AIzaSyDFm6c2kY-28xH_LkwooC_DUCGXXUgh2qA",
   authDomain: "memories-of-domestic-tra-541db.firebaseapp.com",
@@ -34,7 +35,6 @@ window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
 
-// 💡 修正：インポートしたFirestoreの純正関数を、正しくグローバルウインドウに紐付けます
 window.firestoreDoc = doc;
 window.firestoreSetDoc = setDoc;
 window.firestoreGetDoc = getDoc;
@@ -378,6 +378,7 @@ word-break: break-all;
 <div class="custom-alert" id="customAlert"></div>
 
 <script>
+// 💡 GAPI用の正しいAPI_KEYと、SHARED_DOCUMENT_IDを設定
 const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
@@ -428,7 +429,6 @@ async function saveAlbums(){
   
   isSaving = true;
   try {
-    // 💡 修正：インポートした正しい関数名(firestoreDoc, firestoreSetDoc)で保存を実行
     const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
     await window.firestoreSetDoc(docRef, { data: albumData });
     console.log("Firebase保存成功", albumData);
@@ -444,11 +444,9 @@ async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
 
-  // 認証のバッファウェイト
   await new Promise(resolve => setTimeout(resolve, 300));
 
   try {
-    // 💡 修正：インポートした正しい関数名(firestoreDoc, firestoreGetDoc)でロードを実行
     const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
     const docSnap = await window.firestoreGetDoc(docRef);
     
@@ -471,7 +469,6 @@ async function loadAndStartSync(){
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  // 💡 修正：インポートした正しい関数名(firestoreOnSnapshot)でリアルタイム同期を起動
   const targetDoc = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
   unsubscribeSnapshot = window.firestoreOnSnapshot(targetDoc, (docSnap) => {
     if (isSaving) return; 
