@@ -7,6 +7,7 @@
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js" type="module"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
@@ -194,9 +195,8 @@ async function loadJapanMap(){
     if (!response.ok) throw new Error('地図ファイルへのアクセスに失敗しました');
     const topoData = await response.json();
     
-    // 💡 修正：あなたの japan.json のデータ構造を最も完璧に展開する記述に修正（クラッシュの完全除去）
-    let targetObject = topoData.objects.japan || topoData.objects.collection || topoData.objects.provinces;
-    const geojson = topojson.feature(topoData, targetObject);
+    // 💡 形状データの展開
+    const geojson = topojson.feature(topoData, topoData.objects.japan);
     
     const svg = d3.select('#japan-map');
     const projection = d3.geoMercator().center([137,38]).scale(1800).translate([500,500]);
@@ -208,17 +208,17 @@ async function loadJapanMap(){
       .append('path')
       .attr('d',path)
       .attr('class','prefecture')
-      .attr('id', d => d.properties.nam_ja || d.properties.name)
+      .attr('id', d => d.properties.nam_ja)
       .on('click',(event,d)=>{
         if (!auth.currentUser) { showAlert('ログイン後にアルバムを操作できます'); return; }
-        currentPrefecture = d.properties.nam_ja || d.properties.name;
+        currentPrefecture = d.properties.nam_ja;
         document.getElementById('modalTitle').innerText = currentPrefecture + ' のアルバム';
         modal.style.display='flex';
         renderAlbums();
       });
   } catch(err) {
     console.error("地図読み込みエラー:", err);
-    showAlert("❌ 日本地図の読み込みに失敗しました。URLが正しいか確認してください。");
+    showAlert("❌ 日本地図の読み込みに失敗しました。");
   }
 }
 
@@ -420,17 +420,14 @@ function showAlert(message){
   setTimeout(()=>{ box.style.display='none'; },5000); 
 }
 
-// 💡 制限突破の裏技修正：403エラー（セキュリティロック）を強制回避して安全にポップアップを起動する設定に統合
 document.getElementById('loginBtn').addEventListener('click', async () => {
   try{
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    const result = await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
     setTimeout(() => { if(tokenClient) tokenClient.requestAccessToken({ prompt:'consent' }); }, 500);
     showAlert('ログイン成功');
   }catch(err){ 
     console.error(err);
-    showAlert('ログイン失敗: ' + err.message + '\n※FirebaseコンソールのAuthenticationの「承認済みドメイン」に、ご自身のGitHubのURL(ryotaroikoshihsbrands-stack.github.io)が追加されているか、今一度ご確認ください。'); 
+    showAlert('ログイン失敗: ' + err.message); 
   }
 });
 
