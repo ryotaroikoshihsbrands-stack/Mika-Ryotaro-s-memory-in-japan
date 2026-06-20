@@ -384,7 +384,6 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// 💡 共同編集用：2人で共有するひとつの固定ドキュメントIDに設定
 const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
 
 let tokenClient;
@@ -422,7 +421,6 @@ function initializeGis(){
 
 gapiLoaded();
 
-// 💡 共同編集対応：保存先を共通の SHARED_DOCUMENT_ID に指定
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
@@ -440,10 +438,13 @@ async function saveAlbums(){
   setTimeout(() => { isSaving = false; }, 1000);
 }
 
-// 💡 共同編集対応＆安全化：ログイン確定後に共通データを取得し、リアルタイム同期を開始
+// 💡 修正ポイント：認証トークンの確定を待つ安全なロード処理
 async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
+
+  // ログイン直後のFirebase内部トークン反映のわずかな遅延を安全に吸収
+  await new Promise(resolve => setTimeout(resolve, 300));
 
   try {
     const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
@@ -463,11 +464,12 @@ async function loadAndStartSync(){
   } catch (err) {
     console.error("初期データロード失敗詳細:", err);
     showAlert("❌ クラウドデータの読み込みに失敗しました: " + (err.message || err));
+    return; // 初期ロード失敗時は同期処理をスキップして安全を確保
   }
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  // リアルタイムリスナーの登録（相手の変更も自動検知して自分の画面にすぐ反映されます）
+  // リアルタイム同期の開始
   unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
     if (isSaving) return; 
 
@@ -779,7 +781,6 @@ function renderGallery(index){
     
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
     
-    // 💡 削除権限の制御：自分がアップロードしたファイル（または作成者情報がない古いデータ）のみ「×」ボタンを表示
     const isMyFile = !file.uploader || file.uploader === user.uid;
     if (isMyFile) {
       const delBtn = document.createElement('button');
@@ -849,7 +850,6 @@ window.addEventListener('load', () => {
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
       
-      // 💡 安全対策の要：ログイン確定後に共通データを安全にロード
       await loadAndStartSync(); 
     }else{
       userInfo.innerText = '未ログイン';
