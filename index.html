@@ -195,11 +195,15 @@ async function loadJapanMap(){
     if (!response.ok) throw new Error('地図ファイルへのアクセスに失敗しました');
     const topoData = await response.json();
     
-    // 💡 形状データの展開
     const geojson = topojson.feature(topoData, topoData.objects.japan);
-    
     const svg = d3.select('#japan-map');
-    const projection = d3.geoMercator().center([137,38]).scale(1800).translate([500,500]);
+
+    // 💡 軽量地図データの座標スケールに合わせ、中心点と拡大率を完全に最適化
+    const projection = d3.geoMercator()
+      .center([137.5, 36])
+      .scale(2500) 
+      .translate([500, 500]);
+
     const path = d3.geoPath().projection(projection);
 
     svg.selectAll('path')
