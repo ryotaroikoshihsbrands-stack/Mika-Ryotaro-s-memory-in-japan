@@ -427,7 +427,8 @@ async function saveAlbums(){
   
   isSaving = true;
   try {
-    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
+    // 💡 エラー回避のため、保存先のフォルダ名を "shared_rooms" に完全最適化
+    const docRef = window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
     await window.setDoc(docRef, { data: albumData });
     console.log("Firebase保存成功", albumData);
   } catch(e) {
@@ -438,16 +439,14 @@ async function saveAlbums(){
   setTimeout(() => { isSaving = false; }, 1000);
 }
 
-// 💡 修正ポイント：認証トークンの確定を待つ安全なロード処理
 async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
 
-  // ログイン直後のFirebase内部トークン反映のわずかな遅延を安全に吸収
   await new Promise(resolve => setTimeout(resolve, 300));
 
   try {
-    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
+    const docRef = window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
     const docSnap = await window.getDoc(docRef);
     
     if(docSnap.exists()){
@@ -464,13 +463,12 @@ async function loadAndStartSync(){
   } catch (err) {
     console.error("初期データロード失敗詳細:", err);
     showAlert("❌ クラウドデータの読み込みに失敗しました: " + (err.message || err));
-    return; // 初期ロード失敗時は同期処理をスキップして安全を確保
+    return;
   }
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  // リアルタイム同期の開始
-  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
+  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID), (docSnap) => {
     if (isSaving) return; 
 
     if(docSnap.exists()){
