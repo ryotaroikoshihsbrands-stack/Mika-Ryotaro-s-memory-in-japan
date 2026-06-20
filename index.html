@@ -10,43 +10,12 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM",
-  authDomain: "memories-of-domestic-tra-541db.firebaseapp.com",
-  projectId: "memories-of-domestic-tra-541db",
-  storageBucket: "memories-of-domestic-tra-541db.firebasestorage.app",
-  messagingSenderId: "381760330635",
-  appId: "1:381760330635:web:dfcdefd24167864268ad8e"
-};
-
-const app = initializeApp(firebaseConfig);
-
-window.auth = getAuth(app);
-window.db = getFirestore(app);
-
-window.GoogleAuthProvider = GoogleAuthProvider;
-window.signInWithPopup = signInWithPopup;
-window.onAuthStateChanged = onAuthStateChanged;
-window.signOut = signOut;
-
-window.firestoreDoc = doc;
-window.firestoreSetDoc = setDoc;
-window.firestoreGetDoc = getDoc;
-window.firestoreOnSnapshot = onSnapshot;
-</script>
- 
 <style>
 body{
 margin:0;
 font-family:"Yu Gothic",sans-serif;
 background:#f3f4f6;
 }
-
 header{
 background:#0f172a;
 color:white;
@@ -56,18 +25,10 @@ font-size:28px;
 font-weight:bold;
 letter-spacing: 1px;
 }
-
 @media (min-width: 768px) {
-  header {
-    font-size: 38px;
-    padding: 28px;
-  }
+  header { font-size: 38px; padding: 28px; }
 }
-
-.main{
-padding:20px;
-}
-
+.main{ padding:20px; }
 .map-wrapper{
 background:white;
 border-radius:24px;
@@ -79,13 +40,7 @@ max-width: 800px;
 margin: 0 auto;
 box-sizing: border-box;
 }
-
-svg{
-width:100%;
-height:auto;
-display: block;
-}
-
+svg{ width:100%; height:auto; display: block; }
 .prefecture{
 fill:white;
 stroke:#333;
@@ -93,11 +48,7 @@ stroke-width:0.7;
 cursor:pointer;
 transition:0.2s;
 }
-
-.prefecture:hover{
-filter:brightness(0.9);
-}
-
+.prefecture:hover{ filter:brightness(0.9); }
 .modal{
 position:fixed;
 inset:0;
@@ -109,7 +60,6 @@ padding:40px 20px;
 overflow:auto;
 z-index:9999;
 }
-
 .modal-content{
 background:white;
 width:100%;
@@ -118,19 +68,13 @@ border-radius:24px;
 padding:28px;
 box-sizing: border-box;
 }
-
 .modal-top{
 display:flex;
 justify-content:space-between;
 align-items:center;
 margin-bottom:24px;
 }
-
-.modal-title{
-font-size:32px;
-font-weight:bold;
-}
-
+.modal-title{ font-size:32px; font-weight:bold; }
 .close-btn{
 background:#ef4444;
 color:white;
@@ -140,20 +84,13 @@ border-radius:12px;
 cursor:pointer;
 font-weight:bold;
 }
-
 .album-create{
 background:#f9fafb;
 padding:20px;
 border-radius:18px;
 margin-bottom:24px;
 }
-
-.create-row{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-}
-
+.create-row{ display:flex; gap:10px; flex-wrap:wrap; }
 .create-row input[type="text"]{
 flex:1;
 padding:14px;
@@ -161,14 +98,7 @@ border-radius:12px;
 border:1px solid #ccc;
 font-size:16px;
 }
-
-.create-row input[type="color"]{
-width:60px;
-height:50px;
-border:none;
-background:none;
-}
-
+.create-row input[type="color"]{ width:60px; height:50px; border:none; background:none; }
 .create-btn{
 background:#10b981;
 color:white;
@@ -178,13 +108,11 @@ border-radius:12px;
 font-weight:bold;
 cursor:pointer;
 }
-
 .album-list{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
 gap:20px;
 }
-
 .album-card{
 background:white;
 border-radius:20px;
@@ -194,7 +122,6 @@ box-shadow:0 2px 10px rgba(0,0,0,0.06);
 display: flex;
 flex-direction: column;
 }
-
 .album-title{
 font-size:24px;
 font-weight:bold;
@@ -203,20 +130,8 @@ align-items:center;
 gap:10px;
 margin-bottom:14px;
 }
-
-.album-color{
-width:22px;
-height:22px;
-border-radius:50%;
-}
-
-.album-actions{
-display:flex;
-gap:10px;
-flex-wrap:wrap;
-margin-bottom:14px;
-}
-
+.album-color{ width:22px; height:22px; border-radius:50%; }
+.album-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .upload-btn{
 background:#2563eb;
 color:white;
@@ -226,7 +141,6 @@ cursor:pointer;
 font-weight:bold;
 font-size: 14px;
 }
-
 .delete-btn{
 background:#dc2626;
 color:white;
@@ -237,7 +151,6 @@ font-weight:bold;
 cursor:pointer;
 font-size: 14px;
 }
-
 .toggle-preview-btn {
 background: #f3f4f6;
 color: #4b5563;
@@ -254,12 +167,6 @@ display: block;
 width: 100%;
 box-sizing: border-box;
 }
-
-.toggle-preview-btn:hover {
-background: #e5e7eb;
-border-color: #9ca3af;
-}
-
 .gallery{
 display:grid;
 grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
@@ -271,7 +178,6 @@ padding: 8px 4px;
 border-top: 1px dashed #e5e7eb;
 display: none; 
 }
-
 .gallery-item {
 position: relative;
 width: 100%;
@@ -281,19 +187,7 @@ border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 background: #e5e7eb;
 }
-
-.gallery-item img {
-width:100%;
-height:100%;
-object-fit:cover;
-cursor: pointer;
-transition: transform 0.2s;
-}
-
-.gallery-item img:hover {
-transform: scale(1.05);
-}
-
+.gallery-item img { width:100%; height:100%; object-fit:cover; cursor: pointer; }
 .file-delete-btn {
 position: absolute;
 top: 2px;
@@ -306,14 +200,12 @@ width: 20px;
 height: 20px;
 font-size: 12px;
 font-weight: bold;
-cursor: pointer;
+cursor: center;
 display: flex;
 align-items: center;
 justify-content: center;
 z-index: 10;
-box-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
-
 .custom-alert{
 position:fixed;
 bottom:30px;
@@ -333,9 +225,7 @@ word-break: break-all;
 </head>
 <body>
 
-<header>
-国内旅行の思い出
-</header>
+<header>国内旅行の思い出</header>
 <div style="text-align:center; padding:15px; background:white;">
   <button id="loginBtn" style="background:#4285F4; color:white; border:none; padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">
     Googleログイン
@@ -343,63 +233,78 @@ word-break: break-all;
   <button id="logoutBtn" style="background:#e5e7eb; color:#374151; border:1px solid #d1d5db; padding:12px 20px; border-radius:10px; cursor:pointer; font-weight:bold; display:none;">
     ログアウト
   </button>
-  <div id="userInfo" style="font-weight:bold; margin-top:10px;">
-    未ログイン
-  </div>
+  <div id="userInfo" style="font-weight:bold; margin-top:10px;">未ログイン</div>
 </div>
  
 <div class="main">
-<div class="map-wrapper">
-<svg id="japan-map" viewBox="0 0 1000 1000"></svg>
-</div>
+  <div class="map-wrapper">
+    <svg id="japan-map" viewBox="0 0 1000 1000"></svg>
+  </div>
 </div>
 
 <div class="modal" id="modal">
-<div class="modal-content">
-<div class="modal-top">
-<div class="modal-title" id="modalTitle"></div>
-<button class="close-btn" onclick="closeModal()">閉じる</button>
-</div>
-
-<div class="album-create">
-<h3>新しいアルバムを作成</h3>
-<div class="create-row">
-<input type="text" id="albumName" placeholder="アルバム名を入力">
-<input type="color" id="albumColor" value="#10b981">
-<button class="create-btn" onclick="createAlbum()">アルバム作成</button>
-</div>
-</div>
-
-<div class="album-list" id="albumList"></div>
-</div>
+  <div class="modal-content">
+    <div class="modal-top">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="close-btn" onclick="closeModal()">閉じる</button>
+    </div>
+    <div class="album-create">
+      <h3>新しいアルバムを作成</h3>
+      <div class="create-row">
+        <input type="text" id="albumName" placeholder="アルバム名を入力">
+        <input type="color" id="albumColor" value="#10b981">
+        <button class="create-btn" onclick="createAlbum()">アルバム作成</button>
+      </div>
+    </div>
+    <div class="album-list" id="albumList"></div>
+  </div>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM",
+  authDomain: "memories-of-domestic-tra-541db.firebaseapp.com",
+  projectId: "memories-of-domestic-tra-541db",
+  storageBucket: "memories-of-domestic-tra-541db.firebasestorage.app",
+  messagingSenderId: "381760330635",
+  appId: "1:381760330635:web:dfcdefd24167864268ad8e"
+};
+
+// Firebaseの初期化
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 const CLIENT_ID = '1056269199594-iqiu3isr31l990fsv7oh5g0bgolfs8ei.apps.googleusercontent.com';
 const API_KEY = 'AIzaSyCbNpT1jzvscfRvM9KR775uypil01PWToM';
 const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum'; 
-
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
 const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
 
 let tokenClient;
-let lastGisResponse = null;
 let currentPrefecture = '';
 let albumData = {};
 let unsubscribeSnapshot = null;
 let isSaving = false;
 const modal = document.getElementById('modal');
 
+// グローバル関数として登録（HTMLの属性から呼び出せるようにする）
+window.closeModal = closeModal;
+window.createAlbum = createAlbum;
+window.confirmDeleteAlbum = confirmDeleteAlbum;
+window.toggleGallery = toggleGallery;
+window.handleUploadSequence = handleUploadSequence;
+
 function gapiLoaded(){
   gapi.load('client', async()=>{
-    await gapi.client.init({
-      apiKey:API_KEY,
-      discoveryDocs:[DISCOVERY_DOC]
-    });
+    await gapi.client.init({ apiKey:API_KEY, discoveryDocs:[DISCOVERY_DOC] });
     initializeGis();
   });
 }
@@ -409,105 +314,74 @@ function initializeGis(){
     client_id:CLIENT_ID,
     scope:SCOPES,
     callback:(resp)=>{
-      if(resp.error){
-        showAlert('Google Drive接続失敗: ' + resp.error);
-        return;
-      }
-      lastGisResponse = resp;
+      if(resp.error){ showAlert('Google Drive接続失敗: ' + resp.error); return; }
       showAlert('Google Drive接続完了');
     }
   });
 }
 
+// 初期実行
 gapiLoaded();
 
 async function saveAlbums(){
-  const user = window.auth.currentUser;
+  const user = auth.currentUser;
   if(!user) return;
-  
   isSaving = true;
   try {
-    const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
-    await window.firestoreSetDoc(docRef, { data: albumData });
-    console.log("Firebase保存成功", albumData);
+    const docRef = doc(db, "shared_rooms", SHARED_DOCUMENT_ID);
+    await setDoc(docRef, { data: albumData });
   } catch(e) {
-    console.error("Firebase保存エラー詳細:", e);
-    showAlert("❌ クラウド保存失敗！エラー理由: " + (e.message || e));
+    showAlert("❌ クラウド保存失敗: " + (e.message || e));
   }
-  
   setTimeout(() => { isSaving = false; }, 1000);
 }
 
 async function loadAndStartSync(){
-  const user = window.auth.currentUser;
+  const user = auth.currentUser;
   if(!user) return;
-
   await new Promise(resolve => setTimeout(resolve, 300));
-
   try {
-    const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
-    const docSnap = await window.firestoreGetDoc(docRef);
-    
+    const docRef = doc(db, "shared_rooms", SHARED_DOCUMENT_ID);
+    const docSnap = await getDoc(docRef);
     if(docSnap.exists()){
       const incomingData = docSnap.data().data;
-      if (incomingData && Object.keys(incomingData).length > 0) {
-        albumData = incomingData;
-        console.log("初期データロード成功:", albumData);
-      }
+      if (incomingData && Object.keys(incomingData).length > 0) { albumData = incomingData; }
     } else {
       albumData = {};
-      await window.firestoreSetDoc(docRef, { data: {} });
-      console.log("新規共有部屋の初期化完了");
+      await setDoc(docRef, { data: {} });
     }
-    
     paintPrefecture();
-    if(modal.style.display === 'flex') {
-      renderAlbums();
-    }
+    if(modal.style.display === 'flex') { renderAlbums(); }
   } catch (err) {
-    console.error("初期データロード失敗詳細:", err);
-    showAlert("❌ クラウドデータの読み込みに失敗しました: " + (err.message || err));
+    showAlert("❌ クラウド読み込み失敗: " + (err.message || err));
     return;
   }
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
-
-  const targetDoc = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
-  unsubscribeSnapshot = window.firestoreOnSnapshot(targetDoc, (docSnap) => {
+  const targetDoc = doc(db, "shared_rooms", SHARED_DOCUMENT_ID);
+  unsubscribeSnapshot = onSnapshot(targetDoc, (docSnap) => {
     if (isSaving) return; 
-
     if(docSnap.exists()){
       const incomingData = docSnap.data().data;
-      if (incomingData && Object.keys(incomingData).length > 0) {
-        albumData = incomingData;
-      }
+      if (incomingData && Object.keys(incomingData).length > 0) { albumData = incomingData; }
     }
     paintPrefecture();
-    if(modal.style.display === 'flex') {
-      renderAlbums();
-    }
-  }, (error) => {
-    console.error("同期エラー詳細:", error);
+    if(modal.style.display === 'flex') { renderAlbums(); }
   });
 }
 
 async function loadJapanMap(){
   try {
-    const response = await fetch('./japan.json');
-    if (!response.ok) throw new Error('リポジトリ内の地図ファイルが見つかりません');
-    
+    // 💡 根本修正：相対パスをやめ、確実に配信されている絶対URLから地図データを引っ張る構造に変更
+    const response = await fetch('https://ryotaroikoshihsbrands-stack.github.io/Mika-Ryotaro-s-memory-in-japan/japan.json');
+    if (!response.ok) throw new Error('地図ファイルへのアクセスに失敗しました');
     const topoData = await response.json();
     
-    // 💡 修正：アップロードしていただいたデータの内部名「provinces」から正確にオブジェクトを展開します
     const targetKey = topoData.objects.provinces ? 'provinces' : 'japan';
     const geojson = topojson.feature(topoData, topoData.objects[targetKey]);
     const svg = d3.select('#japan-map');
 
-    const projection = d3.geoMercator()
-      .center([137,38])
-      .scale(1800)
-      .translate([500,500]);
-
+    const projection = d3.geoMercator().center([137,38]).scale(1800).translate([500,500]);
     const path = d3.geoPath().projection(projection);
 
     svg.selectAll('path')
@@ -516,13 +390,9 @@ async function loadJapanMap(){
       .append('path')
       .attr('d',path)
       .attr('class','prefecture')
-      // 💡 修正：日本語名が「nam_ja」または「name」のどちらに入っていても確実に読み込めるロジックに強化
       .attr('id', d => d.properties.nam_ja || d.properties.name)
       .on('click',(event,d)=>{
-        if (!window.auth.currentUser) {
-          showAlert('ログイン後にアルバムを操作できます');
-          return;
-        }
+        if (!auth.currentUser) { showAlert('ログイン後にアルバムを操作できます'); return; }
         currentPrefecture = d.properties.nam_ja || d.properties.name;
         document.getElementById('modalTitle').innerText = currentPrefecture + ' のアルバム';
         modal.style.display='flex';
@@ -530,94 +400,64 @@ async function loadJapanMap(){
       });
   } catch(err) {
     console.error("地図読み込みエラー:", err);
-    showAlert("❌ 日本地図の読み込みに失敗しました。japan.jsonが正しく配置されているか確認してください。");
+    showAlert("❌ 日本地図の読み込みに失敗しました。URLが正しいか確認してください。");
   }
 }
 
+// 地図をロード
 loadJapanMap();
 
-function closeModal(){
-  modal.style.display='none';
-}
+function closeModal(){ modal.style.display='none'; }
 
 async function createAlbum(){
   const name = document.getElementById('albumName').value.trim();
   const color = document.getElementById('albumColor').value;
-
-  if(!name){
-    showAlert('アルバム名を入力してください');
-    return;
-  }
-
-  if(!albumData[currentPrefecture]){
-    albumData[currentPrefecture]=[];
-  }
-
-  albumData[currentPrefecture].push({
-    name:name,
-    color:color,
-    files:[]
-  });
-
+  if(!name){ showAlert('アルバム名を入力してください'); return; }
+  if(!albumData[currentPrefecture]){ albumData[currentPrefecture]=[]; }
+  albumData[currentPrefecture].push({ name:name, color:color, files:[] });
   paintPrefecture();
   renderAlbums();
   document.getElementById('albumName').value = '';
-
   await saveAlbums();
-  showAlert('アルバム作成・保存完了！');
+  showAlert('アルバム作成完了！');
 }
 
 function renderAlbums(){
   const list = document.getElementById('albumList');
   list.innerHTML='';
   const albums = albumData[currentPrefecture] || [];
-
-  if(albums.length===0){
-    list.innerHTML='<p>アルバムがありません</p>';
-    return;
-  }
+  if(albums.length===0){ list.innerHTML='<p>アルバムがありません</p>'; return; }
 
   albums.forEach((album,index)=>{
     const card = document.createElement('div');
     card.className='album-card';
     card.style.borderColor=album.color;
-
     const fileCount = album.files ? album.files.length : 0;
     const existingGallery = document.getElementById(`gallery-${index}`);
     const isOpened = existingGallery ? (existingGallery.style.display === 'grid') : false;
 
     card.innerHTML = `
-      <div class="album-title">
-        <span class="album-color" style="background:${album.color}"></span>
-        ${album.name}
-      </div>
+      <div class="album-title"><span class="album-color" style="background:${album.color}"></span>${album.name}</div>
       <div class="album-actions">
-        <label class="upload-btn">
-          写真・動画追加
-          <input style="display:none" type="file" multiple accept="image/*,video/*" onchange="handleUploadSequence(${index},event)">
-        </label>
-        <button class="delete-btn" onclick="confirmDeleteAlbum(${index})">削除</button>
+        <label class="upload-btn">写真追加<input style="display:none" type="file" multiple accept="image/*,video/*" onchange="window.handleUploadSequence(${index},event)"></label>
+        <button class="delete-btn" onclick="window.confirmDeleteAlbum(${index})">削除</button>
       </div>
-      <button class="toggle-preview-btn" id="toggle-btn-${index}" onclick="toggleGallery(${index})">
-        ${isOpened ? '▲ プレビューを閉じる' : `📸 ${fileCount}件の思い出をプレビュー`}
+      <button class="toggle-preview-btn" id="toggle-btn-${index}" onclick="window.toggleGallery(${index})">
+        ${isOpened ? '▲ プレビューを閉じる' : `📸 ${fileCount}件の思い出`}
       </button>
       <div class="gallery" id="gallery-${index}" style="display: ${isOpened ? 'grid' : 'none'};"></div>
     `;
     list.appendChild(card);
-    
-    if(isOpened) {
-      renderGallery(index);
-    }
+    if(isOpened) { renderGallery(index); }
   });
 }
 
 function toggleGallery(index) {
   const gallery = document.getElementById(`gallery-${index}`);
   const btn = document.getElementById(`toggle-btn-${index}`);
-  
   if (gallery.style.display === 'grid') {
     gallery.style.display = 'none';
-    btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出をプレビュー`;
+    btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出`;
   } else {
     renderGallery(index); 
     gallery.style.display = 'grid';
@@ -627,28 +467,22 @@ function toggleGallery(index) {
 
 async function confirmDeleteAlbum(index) {
   const albumName = albumData[currentPrefecture][index].name;
-  const proceed = window.confirm(`本当に<${albumName}>を削除しますか`);
-  
-  if (proceed) {
+  if (window.confirm(`本当に<${albumName}>を削除しますか`)) {
     albumData[currentPrefecture].splice(index,1);
     paintPrefecture();
     renderAlbums();
-    
     await saveAlbums();
     showAlert('アルバム削除完了');
   }
 }
 
 function paintPrefecture(){
-  const all = document.querySelectorAll('.prefecture');
-  all.forEach(pref=>{ pref.style.fill='white'; });
-
+  document.querySelectorAll('.prefecture').forEach(pref=>{ pref.style.fill='white'; });
   Object.keys(albumData).forEach(pref=>{
     const albums = albumData[pref];
     if(albums.length>0){
-      const color = albums[albums.length-1].color;
       const target = document.getElementById(pref);
-      if(target){ target.style.fill=color; }
+      if(target){ target.style.fill = albums[albums.length-1].color; }
     }
   });
 }
@@ -659,44 +493,25 @@ async function getOrCreateFolder(folderName, parentId) {
       q: `name = '${folderName}' and mimeType = 'application/vnd.google-apps.folder' and '${parentId}' in parents and trashed = false`,
       fields: 'files(id)'
     });
-    
-    const files = response.result.files;
-    if (files && files.length > 0) {
-      return files[0].id;
-    }
-  } catch(e) {
-    console.log("フォルダ検索をスキップし、新規作成を試みます");
-  }
-  
-  const createResponse = await gapi.client.drive.files.create({
-    resource: {
-      name: folderName,
-      mimeType: 'application/vnd.google-apps.folder',
-      parents: [parentId]
-    },
+    if (response.result.files && response.result.files.length > 0) { return response.result.files[0].id; }
+  } catch(e) {}
+  const res = await gapi.client.drive.files.create({
+    resource: { name: folderName, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
     fields: 'id'
   });
-  return createResponse.result.id;
+  return res.result.id;
 }
 
 async function handleUploadSequence(albumIndex, event) {
   const files = Array.from(event.target.files);
   if(files.length === 0) return;
-
   const currentToken = gapi.client.getToken();
-  
   if (!currentToken || !currentToken.access_token) {
-    showAlert("Google Driveへの接続を確認しています。ポップアップが表示されたら許可してください。");
-    
+    showAlert("Drive接続を確認中...");
     tokenClient.callback = async (resp) => {
-      if (resp.error) {
-        showAlert("Driveへのアクセス許可が降りませんでした: " + resp.error);
-        return;
-      }
-      lastGisResponse = resp;
+      if (resp.error) { showAlert("許可が降りませんでした: " + resp.error); return; }
       await proceedWithUpload(albumIndex, files);
     };
-    
     tokenClient.requestAccessToken({ prompt:'consent' });
   } else {
     await proceedWithUpload(albumIndex, files);
@@ -704,75 +519,37 @@ async function handleUploadSequence(albumIndex, event) {
 }
 
 async function proceedWithUpload(albumIndex, files) {
-  showAlert(`${files.length}件のファイルをアップロード中...`);
+  showAlert(`${files.length}件をアップロード中...`);
   let targetFolderId = FOLDER_ID; 
-
   try {
     const prefFolderId = await getOrCreateFolder(currentPrefecture, FOLDER_ID);
-    const album = albumData[currentPrefecture][albumIndex];
-    targetFolderId = await getOrCreateFolder(album.name, prefFolderId);
-  } catch(err) {
-    console.warn("フォルダ階層化に失敗したためルート直下に保存します:", err);
-  }
-
+    targetFolderId = await getOrCreateFolder(albumData[currentPrefecture][albumIndex].name, prefFolderId);
+  } catch(err) {}
   try {
-    for(const file of files){
-      await uploadToDrive(file, albumIndex, targetFolderId);
-    }
+    for(const file of files){ await uploadToDrive(file, albumIndex, targetFolderId); }
     showAlert('アップロード完了');
   } catch(err) {
-    console.error(err);
-    showAlert('アップロード中にエラーが発生しました: ' + (err.message || err));
+    showAlert('エラーが発生しました: ' + (err.message || err));
   }
 }
 
 async function uploadToDrive(file, albumIndex, targetFolderId){
   const token = gapi.client.getToken();
-  const accessToken = token.access_token;
-  const user = window.auth.currentUser; 
-  
-  const metadata = {
-    name:file.name,
-    parents:[targetFolderId]
-  };
-
   const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+  form.append('metadata', new Blob([JSON.stringify({ name:file.name, parents:[targetFolderId] })],{type:'application/json'}));
   form.append('file',file);
 
-  const response = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-    {
-      method:'POST',
-      headers:new Headers({ Authorization:'Bearer '+accessToken }),
-      body:form
-    }
-  );
-
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(`Driveへの送信失敗(${response.status}): ${errText}`);
-  }
-
+  const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method:'POST',
+    headers: new Headers({ Authorization:'Bearer '+token.access_token }),
+    body:form
+  });
+  if (!response.ok) throw new Error('Drive送信失敗');
   const data = await response.json();
+  await gapi.client.drive.permissions.create({ fileId:data.id, resource:{ role:'reader', type:'anyone' } });
 
-  await gapi.client.drive.permissions.create({
-    fileId:data.id,
-    resource:{ role:'reader', type:'anyone' }
-  });
-
-  albumData[currentPrefecture][albumIndex].files.push({
-    id: data.id, 
-    type: file.type,
-    uploader: user.uid
-  });
-
+  albumData[currentPrefecture][albumIndex].files.push({ id: data.id, type: file.type, uploader: auth.currentUser.uid });
   renderGallery(albumIndex);
-  const btn = document.getElementById(`toggle-btn-${albumIndex}`);
-  if(btn && document.getElementById(`gallery-${albumIndex}`).style.display !== 'grid') {
-    btn.innerText = `📸 ${albumData[currentPrefecture][albumIndex].files.length}件の思い出をプレビュー`;
-  }
-
   await saveAlbums();
 }
 
@@ -780,59 +557,82 @@ function renderGallery(index){
   const gallery = document.getElementById(`gallery-${index}`);
   if(!gallery) return;
   gallery.innerHTML='';
-
-  const user = window.auth.currentUser;
   const files = albumData[currentPrefecture][index].files || [];
   const token = gapi.client.getToken();
-  const accessToken = token ? token.access_token : null;
 
   files.forEach((file, fileIndex) => {
-    const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
-    if (!fileId) return;
-
+    if (!file.id) return;
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
     
-    const origUrl = `https://drive.google.com/uc?id=${fileId}`;
-    
-    const isMyFile = !file.uploader || file.uploader === user.uid;
-    if (isMyFile) {
+    if (!file.uploader || file.uploader === auth.currentUser.uid) {
       const delBtn = document.createElement('button');
       delBtn.className = 'file-delete-btn';
       delBtn.innerText = '×';
-      delBtn.onclick = (e) => {
-        e.stopPropagation(); 
-        deleteFile(index, fileIndex);
-      };
+      delBtn.onclick = (e) => { e.stopPropagation(); deleteFile(index, fileIndex); };
       itemDiv.appendChild(delBtn);
     }
     
     const imgEl = document.createElement('img');
-    imgEl.alt = "思い出";
-    imgEl.onclick = () => window.open(origUrl, '_blank');
+    imgEl.onclick = () => window.open(`https://drive.google.com/uc?id=${file.id}`, '_blank');
     
-    if (accessToken) {
-      fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      })
-      .then(res => {
-        if(!res.ok) throw new Error();
-        return res.blob();
-      })
-      .then(blob => {
-        const blobUrl = URL.createObjectURL(blob);
-        imgEl.src = blobUrl;
-      })
-      .catch(() => {
-        imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
-      });
+    if (token && token.access_token) {
+      fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, { headers: { Authorization: `Bearer ${token.access_token}` } })
+      .then(res => res.blob())
+      .then(blob => { imgEl.src = URL.createObjectURL(blob); })
+      .catch(() => { imgEl.src = `https://drive.google.com/thumbnail?id=${file.id}&sz=w200`; });
     } else {
-      imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+      imgEl.src = `https://drive.google.com/thumbnail?id=${file.id}&sz=w200`;
     }
-
     itemDiv.appendChild(imgEl);
     gallery.appendChild(itemDiv);
   });
 }
 
-async function deleteFile(albumIndex, file
+async function deleteFile(albumIndex, fileIndex) {
+  if (window.confirm("この写真をアルバムから削除しますか？")) {
+    albumData[currentPrefecture][albumIndex].files.splice(fileIndex, 1);
+    renderGallery(albumIndex);
+    await saveAlbums();
+  }
+}
+
+function showAlert(message){
+  const box = document.getElementById('customAlert');
+  box.innerText = message; box.style.display='block';
+  setTimeout(()=>{ box.style.display='none'; },5000); 
+}
+
+// ログインボタンの紐付けと状態監視
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  try{
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    setTimeout(() => { if(tokenClient) tokenClient.requestAccessToken({ prompt:'consent' }); }, 500);
+    showAlert('ログイン成功');
+  }catch(err){ showAlert('ログイン失敗: ' + err.message); }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  try { await signOut(auth); showAlert('ログアウトしました'); } catch (err) { showAlert('ログアウト失敗'); }
+});
+
+onAuthStateChanged(auth, async (user)=>{
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const userInfo = document.getElementById('userInfo');
+  if(user){
+    userInfo.innerText = 'ログイン済み';
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    await loadAndStartSync(); 
+  }else{
+    userInfo.innerText = '未ログイン';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    if(unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+    albumData = {}; paintPrefecture(); 
+  }
+});
+</script>
+</body>
+</html>
