@@ -384,6 +384,9 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+// 💡 共同編集用：2人で共有するひとつの固定ドキュメントIDに設定
+const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
+
 let tokenClient;
 let lastGisResponse = null;
 let currentPrefecture = '';
@@ -419,14 +422,14 @@ function initializeGis(){
 
 gapiLoaded();
 
-// 💡 修正：原因切り分けのため、確実に権限が通る「各自のuser.uid」のコレクション構造にリダイレクト
+// 💡 共同編集対応：保存先を共通の SHARED_DOCUMENT_ID に指定
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
   
   isSaving = true;
   try {
-    const docRef = window.doc(window.db, "albums", user.uid); // user.uid に変更
+    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
     await window.setDoc(docRef, { data: albumData });
     console.log("Firebase保存成功", albumData);
   } catch(e) {
@@ -437,12 +440,13 @@ async function saveAlbums(){
   setTimeout(() => { isSaving = false; }, 1000);
 }
 
+// 💡 共同編集対応＆安全化：ログイン確定後に共通データを取得し、リアルタイム同期を開始
 async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
 
   try {
-    const docRef = window.doc(window.db, "albums", user.uid); // user.uid に変更
+    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
     const docSnap = await window.getDoc(docRef);
     
     if(docSnap.exists()){
@@ -463,7 +467,8 @@ async function loadAndStartSync(){
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", user.uid), (docSnap) => {
+  // リアルタイムリスナーの登録（相手の変更も自動検知して自分の画面にすぐ反映されます）
+  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
     if (isSaving) return; 
 
     if(docSnap.exists()){
@@ -676,7 +681,7 @@ async function handleUploadSequence(albumIndex, event) {
       await proceedWithUpload(albumIndex, files);
     };
     
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    tokenClient.requestAccessToken({ prompt:'consent' });
   } else {
     await proceedWithUpload(albumIndex, files);
   }
@@ -774,6 +779,7 @@ function renderGallery(index){
     
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
     
+    // 💡 削除権限の制御：自分がアップロードしたファイル（または作成者情報がない古いデータ）のみ「×」ボタンを表示
     const isMyFile = !file.uploader || file.uploader === user.uid;
     if (isMyFile) {
       const delBtn = document.createElement('button');
@@ -832,7 +838,6 @@ function showAlert(message){
   setTimeout(()=>{ box.style.display='none'; },5000); 
 }
 
-// 💡 修正の最重要ポイント：認証状態の完全確定とGIS（Google Identity Services）の順序制御
 window.addEventListener('load', () => {
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -844,7 +849,7 @@ window.addEventListener('load', () => {
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
       
-      // 💡 認証が100%通ったのを確認してから、Firestoreのデータロードを開始
+      // 💡 安全対策の要：ログイン確定後に共通データを安全にロード
       await loadAndStartSync(); 
     }else{
       userInfo.innerText = '未ログイン';
@@ -862,10 +867,8 @@ window.addEventListener('load', () => {
   loginBtn.addEventListener('click', async () => {
     try{
       const provider = new window.GoogleAuthProvider();
-      // 1. Firebase Authポップアップを完了させる
       const result = await window.signInWithPopup(window.auth, provider);
       
-      // 2. Authログイン完了が検知された後に、Google Driveのアクセストークンを要求する
       setTimeout(() => {
         if(tokenClient) {
           tokenClient.requestAccessToken({ prompt:'consent' });
