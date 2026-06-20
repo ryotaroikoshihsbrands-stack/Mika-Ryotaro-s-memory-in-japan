@@ -384,6 +384,7 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+// 固定ドキュメントID
 const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
 
 let tokenClient;
@@ -421,7 +422,7 @@ function initializeGis(){
 
 gapiLoaded();
 
-// 💡 修正：Firebaseへの保存を「同期完了まで確実に待機（await）」する仕組みに変更
+// 💡 改善：裏で起きているエラーを100%キャッチして直接画面に表示する
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
@@ -429,15 +430,14 @@ async function saveAlbums(){
   isSaving = true;
   try {
     const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
-    // awaitを入れてクラウドへの書き込み完了を絶対に待つ
     await window.setDoc(docRef, { data: albumData });
-    console.log("Firebase保存完了:", albumData);
+    console.log("Firebaseへの書き込み成功:", albumData);
   } catch(e) {
-    console.error("Firebase保存失敗:", e);
-    showAlert("保存に失敗しました");
+    console.error("Firebase保存エラー詳細:", e);
+    // エラーが起きた場合は、通知ポップアップで直接エラーメッセージを表示する（重要）
+    showAlert("❌ クラウド保存失敗！エラー理由: " + (e.message || e));
   }
   
-  // 保存完了後に同期ロックを外すまでのバッファ時間を確保
   setTimeout(() => { isSaving = false; }, 1000);
 }
 
@@ -453,7 +453,7 @@ async function loadAndStartSync(){
       const incomingData = docSnap.data().data;
       if (incomingData && Object.keys(incomingData).length > 0) {
         albumData = incomingData;
-        console.log("初回DLデータ反映:", albumData);
+        console.log("初期データロード成功:", albumData);
       }
     }
     paintPrefecture();
@@ -461,13 +461,14 @@ async function loadAndStartSync(){
       renderAlbums();
     }
   } catch (err) {
-    console.error("初回読み込みエラー:", err);
+    console.error("初期データロード失敗詳細:", err);
+    showAlert("❌ クラウドデータの読み込みに失敗しました: " + (err.message || err));
   }
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
   unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
-    if (isSaving) return; // 保存中は外部からの上書きを完全シャットアウト
+    if (isSaving) return; 
 
     if(docSnap.exists()){
       const incomingData = docSnap.data().data;
@@ -479,6 +480,8 @@ async function loadAndStartSync(){
     if(modal.style.display === 'flex') {
       renderAlbums();
     }
+  }, (error) => {
+    console.error("同期エラー詳細:", error);
   });
 }
 
@@ -520,7 +523,6 @@ function closeModal(){
   modal.style.display='none';
 }
 
-// 💡 修正：関数自体を async 化し、保存の成功を確認してから次のステップ（アラート等）に移る
 async function createAlbum(){
   const name = document.getElementById('albumName').value.trim();
   const color = document.getElementById('albumColor').value;
@@ -544,7 +546,7 @@ async function createAlbum(){
   renderAlbums();
   document.getElementById('albumName').value = '';
 
-  // 💡 クラウド保存が終わるのを確実に待つ
+  // 100%クラウド保存が完了するのを待機する
   await saveAlbums();
   showAlert('アルバム作成・保存完了！');
 }
@@ -832,7 +834,7 @@ function showAlert(message){
   const box = document.getElementById('customAlert');
   box.innerText = message;
   box.style.display='block';
-  setTimeout(()=>{ box.style.display='none'; },4000); 
+  setTimeout(()=>{ box.style.display='none'; },5000); // じっくり読めるよう5秒に延長
 }
 
 window.addEventListener('load', () => {
