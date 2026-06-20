@@ -384,9 +384,6 @@ const FOLDER_ID = '130mpd1jAO0Qh9NS96838QbZ6Y9Tmqzum';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
-// 固定ドキュメントID
-const SHARED_DOCUMENT_ID = "shared_travel_album_room"; 
-
 let tokenClient;
 let lastGisResponse = null;
 let currentPrefecture = '';
@@ -422,19 +419,18 @@ function initializeGis(){
 
 gapiLoaded();
 
-// 💡 改善：裏で起きているエラーを100%キャッチして直接画面に表示する
+// 💡 修正：原因切り分けのため、確実に権限が通る「各自のuser.uid」のコレクション構造にリダイレクト
 async function saveAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
   
   isSaving = true;
   try {
-    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
+    const docRef = window.doc(window.db, "albums", user.uid); // user.uid に変更
     await window.setDoc(docRef, { data: albumData });
-    console.log("Firebaseへの書き込み成功:", albumData);
+    console.log("Firebase保存成功", albumData);
   } catch(e) {
     console.error("Firebase保存エラー詳細:", e);
-    // エラーが起きた場合は、通知ポップアップで直接エラーメッセージを表示する（重要）
     showAlert("❌ クラウド保存失敗！エラー理由: " + (e.message || e));
   }
   
@@ -446,7 +442,7 @@ async function loadAndStartSync(){
   if(!user) return;
 
   try {
-    const docRef = window.doc(window.db, "albums", SHARED_DOCUMENT_ID);
+    const docRef = window.doc(window.db, "albums", user.uid); // user.uid に変更
     const docSnap = await window.getDoc(docRef);
     
     if(docSnap.exists()){
@@ -467,7 +463,7 @@ async function loadAndStartSync(){
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", SHARED_DOCUMENT_ID), (docSnap) => {
+  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "albums", user.uid), (docSnap) => {
     if (isSaving) return; 
 
     if(docSnap.exists()){
@@ -546,7 +542,6 @@ async function createAlbum(){
   renderAlbums();
   document.getElementById('albumName').value = '';
 
-  // 100%クラウド保存が完了するのを待機する
   await saveAlbums();
   showAlert('アルバム作成・保存完了！');
 }
@@ -834,9 +829,10 @@ function showAlert(message){
   const box = document.getElementById('customAlert');
   box.innerText = message;
   box.style.display='block';
-  setTimeout(()=>{ box.style.display='none'; },5000); // じっくり読めるよう5秒に延長
+  setTimeout(()=>{ box.style.display='none'; },5000); 
 }
 
+// 💡 修正の最重要ポイント：認証状態の完全確定とGIS（Google Identity Services）の順序制御
 window.addEventListener('load', () => {
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -847,7 +843,9 @@ window.addEventListener('load', () => {
       userInfo.innerText = 'ログイン済み';
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
-      loadAndStartSync(); 
+      
+      // 💡 認証が100%通ったのを確認してから、Firestoreのデータロードを開始
+      await loadAndStartSync(); 
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
@@ -864,9 +862,16 @@ window.addEventListener('load', () => {
   loginBtn.addEventListener('click', async () => {
     try{
       const provider = new window.GoogleAuthProvider();
+      // 1. Firebase Authポップアップを完了させる
       const result = await window.signInWithPopup(window.auth, provider);
-      userInfo.innerText = 'ログイン済み';
-      tokenClient.requestAccessToken({ prompt:'consent' });
+      
+      // 2. Authログイン完了が検知された後に、Google Driveのアクセストークンを要求する
+      setTimeout(() => {
+        if(tokenClient) {
+          tokenClient.requestAccessToken({ prompt:'consent' });
+        }
+      }, 500);
+      
       showAlert('ログイン成功');
     }catch(err){
       console.error(err);
