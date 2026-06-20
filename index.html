@@ -493,12 +493,14 @@ async function loadAndStartSync(){
 
 async function loadJapanMap(){
   try {
-    // 💡 修正：GitHubのJekyllによる公開ブロックを完全に回避するため、確実に配信される「.json」に変更
     const response = await fetch('./japan.json');
     if (!response.ok) throw new Error('リポジトリ内の地図ファイルが見つかりません');
     
     const topoData = await response.json();
-    const geojson = topojson.feature(topoData, topoData.objects.japan);
+    
+    // 💡 修正：アップロードしていただいたデータの内部名「provinces」から正確にオブジェクトを展開します
+    const targetKey = topoData.objects.provinces ? 'provinces' : 'japan';
+    const geojson = topojson.feature(topoData, topoData.objects[targetKey]);
     const svg = d3.select('#japan-map');
 
     const projection = d3.geoMercator()
@@ -514,13 +516,14 @@ async function loadJapanMap(){
       .append('path')
       .attr('d',path)
       .attr('class','prefecture')
-      .attr('id', d => d.properties.nam_ja)
+      // 💡 修正：日本語名が「nam_ja」または「name」のどちらに入っていても確実に読み込めるロジックに強化
+      .attr('id', d => d.properties.nam_ja || d.properties.name)
       .on('click',(event,d)=>{
         if (!window.auth.currentUser) {
           showAlert('ログイン後にアルバムを操作できます');
           return;
         }
-        currentPrefecture = d.properties.nam_ja;
+        currentPrefecture = d.properties.nam_ja || d.properties.name;
         document.getElementById('modalTitle').innerText = currentPrefecture + ' のアルバム';
         modal.style.display='flex';
         renderAlbums();
@@ -832,77 +835,4 @@ function renderGallery(index){
   });
 }
 
-async function deleteFile(albumIndex, fileIndex) {
-  const proceed = window.confirm("この写真/動画をアルバムから削除しますか？\n(Google Drive上の元のファイルは削除されません)");
-  if (!proceed) return;
-
-  albumData[currentPrefecture][albumIndex].files.splice(fileIndex, 1);
-  renderGallery(albumIndex);
-
-  await saveAlbums();
-  showAlert("ファイルを削除しました");
-}
-
-function showAlert(message){
-  const box = document.getElementById('customAlert');
-  box.innerText = message;
-  box.style.display='block';
-  setTimeout(()=>{ box.style.display='none'; },5000); 
-}
-
-window.addEventListener('load', () => {
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const userInfo = document.getElementById('userInfo');
-
-  window.onAuthStateChanged(window.auth, async (user)=>{
-    if(user){
-      userInfo.innerText = 'ログイン済み';
-      loginBtn.style.display = 'none';
-      logoutBtn.style.display = 'inline-block';
-      
-      await loadAndStartSync(); 
-    }else{
-      userInfo.innerText = '未ログイン';
-      loginBtn.style.display = 'inline-block';
-      logoutBtn.style.display = 'none';
-      if(unsubscribeSnapshot) {
-        unsubscribeSnapshot();
-        unsubscribeSnapshot = null;
-      }
-      albumData = {}; 
-      paintPrefecture(); 
-    }
-  });
-
-  loginBtn.addEventListener('click', async () => {
-    try{
-      const provider = new window.GoogleAuthProvider();
-      const result = await window.signInWithPopup(window.auth, provider);
-      
-      setTimeout(() => {
-        if(tokenClient) {
-          tokenClient.requestAccessToken({ prompt:'consent' });
-        }
-      }, 500);
-      
-      showAlert('ログイン成功');
-    }catch(err){
-      console.error(err);
-      showAlert('ログイン失敗: ' + err.message);
-    }
-  });
-
-  logoutBtn.addEventListener('click', async () => {
-    try {
-      await window.signOut(window.auth);
-      showAlert('ログアウトしました');
-    } catch (err) {
-      console.error(err);
-      showAlert('ログアウトに失敗しました');
-    }
-  });
-});
-</script>
-</body>
-</html>
+async function deleteFile(albumIndex, file
