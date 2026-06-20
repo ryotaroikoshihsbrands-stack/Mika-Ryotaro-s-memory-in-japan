@@ -34,10 +34,11 @@ window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
 window.signOut = signOut;
 
-window.doc = doc;
-window.setDoc = setDoc;
-window.getDoc = getDoc;
-window.onSnapshot = onSnapshot;
+// 💡 修正：インポートしたFirestoreの純正関数を、正しくグローバルウインドウに紐付けます
+window.firestoreDoc = doc;
+window.firestoreSetDoc = setDoc;
+window.firestoreGetDoc = getDoc;
+window.firestoreOnSnapshot = onSnapshot;
 </script>
  
 <style>
@@ -427,9 +428,9 @@ async function saveAlbums(){
   
   isSaving = true;
   try {
-    // 💡 エラー回避のため、保存先のフォルダ名を "shared_rooms" に完全最適化
-    const docRef = window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
-    await window.setDoc(docRef, { data: albumData });
+    // 💡 修正：インポートした正しい関数名(firestoreDoc, firestoreSetDoc)で保存を実行
+    const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
+    await window.firestoreSetDoc(docRef, { data: albumData });
     console.log("Firebase保存成功", albumData);
   } catch(e) {
     console.error("Firebase保存エラー詳細:", e);
@@ -443,11 +444,13 @@ async function loadAndStartSync(){
   const user = window.auth.currentUser;
   if(!user) return;
 
+  // 認証のバッファウェイト
   await new Promise(resolve => setTimeout(resolve, 300));
 
   try {
-    const docRef = window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
-    const docSnap = await window.getDoc(docRef);
+    // 💡 修正：インポートした正しい関数名(firestoreDoc, firestoreGetDoc)でロードを実行
+    const docRef = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
+    const docSnap = await window.firestoreGetDoc(docRef);
     
     if(docSnap.exists()){
       const incomingData = docSnap.data().data;
@@ -468,7 +471,9 @@ async function loadAndStartSync(){
 
   if(unsubscribeSnapshot) unsubscribeSnapshot();
 
-  unsubscribeSnapshot = window.onSnapshot(window.doc(window.db, "shared_rooms", SHARED_DOCUMENT_ID), (docSnap) => {
+  // 💡 修正：インポートした正しい関数名(firestoreOnSnapshot)でリアルタイム同期を起動
+  const targetDoc = window.firestoreDoc(window.db, "shared_rooms", SHARED_DOCUMENT_ID);
+  unsubscribeSnapshot = window.firestoreOnSnapshot(targetDoc, (docSnap) => {
     if (isSaving) return; 
 
     if(docSnap.exists()){
