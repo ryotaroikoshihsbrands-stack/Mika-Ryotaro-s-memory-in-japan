@@ -691,34 +691,29 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    // 💡 画像用の枠を先に作成して追加
     const imgEl = document.createElement('img');
     imgEl.alt = "思い出";
     imgEl.onclick = () => window.open(origUrl, '_blank');
     itemDiv.appendChild(imgEl);
     gallery.appendChild(itemDiv);
 
-    // 💡 【スマホ対策の最重要核心】
-    // 外部URLを直接読み込ませず、JavaScriptで裏からデータをダウンロード（fetch）してローカルBlobに変換
     if (accessToken) {
-      // サムネイルサイズ（sz=w200）で軽量に画像データをバイナリとして引っ張る
+      // 💡 構文をJavaScriptの標準的なルールに正しく修正しました
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: { "Authorization": "Bearer " + accessToken }
       })
       .then(res => {
         if (!res.ok) throw new Error();
         return res.blob();
       })
       .then(blob => {
-        // ダウンロードした生データを、スマホブラウザが絶対に拒否できないローカルURLオブジェクトに変換して代入
         imgEl.src = URL.createObjectURL(blob);
       })
       .catch(() => {
-        // 万が一、alt=mediaでエラーが出た場合のフォールバック（PC用）
-        imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
       });
     } else {
-      imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+      imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
     }
   });
 }
