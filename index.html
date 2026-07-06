@@ -680,29 +680,46 @@ function renderGallery(index){
 
   const files = albumData[currentPrefecture][index].files || [];
   const token = gapi.client.getToken();
-  // 💡 スマホのブロックを完全に回避するためにトークン文字列を取得
   const accessToken = (token && token.access_token) ? token.access_token : '';
 
   files.forEach(file => {
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
-    // 💡 【超重要】認証トークン（access_token）を末尾に直接付与することで、スマホからでもGoogleのセキュリティを突破
-    let thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
-    if (accessToken) {
-      thumbUrl += `&oauth_token=${accessToken}`;
-    }
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
 
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    if(file.type && file.type.startsWith('image')){
-      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出写真" onclick="window.open('${origUrl}', '_blank')">`;
-    }else{
-      itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出動画" onclick="window.open('${origUrl}', '_blank')">`;
-    }
+    // 💡 画像用の枠を先に作成して追加
+    const imgEl = document.createElement('img');
+    imgEl.alt = "思い出";
+    imgEl.onclick = () => window.open(origUrl, '_blank');
+    itemDiv.appendChild(imgEl);
     gallery.appendChild(itemDiv);
+
+    // 💡 【スマホ対策の最重要核心】
+    // 外部URLを直接読み込ませず、JavaScriptで裏からデータをダウンロード（fetch）してローカルBlobに変換
+    if (accessToken) {
+      // サムネイルサイズ（sz=w200）で軽量に画像データをバイナリとして引っ張る
+      fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.blob();
+      })
+      .then(blob => {
+        // ダウンロードした生データを、スマホブラウザが絶対に拒否できないローカルURLオブジェクトに変換して代入
+        imgEl.src = URL.createObjectURL(blob);
+      })
+      .catch(() => {
+        // 万が一、alt=mediaでエラーが出た場合のフォールバック（PC用）
+        imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+      });
+    } else {
+      imgEl.src = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+    }
   });
 }
 
