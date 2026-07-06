@@ -317,7 +317,6 @@ word-break: break-all;
 国内旅行の思い出
 </header>
 <div style="text-align:center;padding:15px;background:white;">
-<!-- 💡 初期状態はログインボタンのみ表示、ログアウトボタンは最初から明示的に非表示(display:none)にする -->
 <button id="loginBtn" style="background:#4285F4;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold;display:inline-block;">
 Googleログイン
 </button>
@@ -680,12 +679,19 @@ function renderGallery(index){
   gallery.innerHTML='';
 
   const files = albumData[currentPrefecture][index].files || [];
+  const token = gapi.client.getToken();
+  // 💡 スマホのブロックを完全に回避するためにトークン文字列を取得
+  const accessToken = (token && token.access_token) ? token.access_token : '';
 
   files.forEach(file => {
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
-    const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+    // 💡 【超重要】認証トークン（access_token）を末尾に直接付与することで、スマホからでもGoogleのセキュリティを突破
+    let thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
+    if (accessToken) {
+      thumbUrl += `&oauth_token=${accessToken}`;
+    }
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
 
     const itemDiv = document.createElement('div');
@@ -712,19 +718,18 @@ window.addEventListener('load', () => {
   const logoutBtn = document.getElementById('logoutBtn');
   const userInfo = document.getElementById('userInfo');
 
-  // 💡 お二人の理想の仕様を100%確実に実現する切り替えロジック
   window.onAuthStateChanged(window.auth, async (user)=>{
     if(user){
       userInfo.innerText = 'ログイン済み';
-      loginBtn.style.display = 'none';         // 👈 ログインボタンの表示を完全に消す
-      logoutBtn.style.display = 'inline-block'; // 👈 代わりにログアウトボタンのみを表示
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'inline-block';
       await loadAlbums();
     }else{
       userInfo.innerText = '未ログイン';
-      loginBtn.style.display = 'inline-block'; // 👈 ログインボタンのみを表示（未ログイン状態を認識できる）
-      logoutBtn.style.display = 'none';        // 👈 ログアウトボタンは完全に不要（非表示）
-      albumData = {};                          // ログアウト時は安全にデータをクリア
-      paintPrefecture();                       // 地図の色もクリア
+      loginBtn.style.display = 'inline-block';
+      logoutBtn.style.display = 'none';
+      albumData = {};
+      paintPrefecture();
     }
   });
 
