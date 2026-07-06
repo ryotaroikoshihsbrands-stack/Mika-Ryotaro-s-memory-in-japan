@@ -7,12 +7,13 @@
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js" type="module"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://accounts.google.com/gsi/client"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -32,6 +33,7 @@ window.db = getFirestore(app);
 window.GoogleAuthProvider = GoogleAuthProvider;
 window.signInWithPopup = signInWithPopup;
 window.onAuthStateChanged = onAuthStateChanged;
+window.signOut = signOut;
 
 window.doc = doc;
 window.setDoc = setDoc;
@@ -315,8 +317,12 @@ word-break: break-all;
 国内旅行の思い出
 </header>
 <div style="text-align:center;padding:15px;background:white;">
-<button id="loginBtn" style="background:#4285F4;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">
+<!-- 💡 初期状態はログインボタンのみ表示、ログアウトボタンは最初から明示的に非表示(display:none)にする -->
+<button id="loginBtn" style="background:#4285F4;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold;display:inline-block;">
 Googleログイン
+</button>
+<button id="logoutBtn" style="background:#dc2626;color:white;border:none;padding:12px 20px;border-radius:10px;cursor:pointer;font-weight:bold;display:none;">
+ログアウト
 </button>
 <div id="userInfo" style="margin-top:10px;font-weight:bold;">
 未ログイン
@@ -430,6 +436,10 @@ async function loadJapanMap(){
     .attr('class','prefecture')
     .attr('id',d=>d.properties.nam_ja)
     .on('click',(event,d)=>{
+      if(!window.auth.currentUser) {
+        showAlert('ログイン後にアルバムを操作できます');
+        return;
+      }
       currentPrefecture = d.properties.nam_ja;
       document.getElementById('modalTitle').innerText = currentPrefecture + ' のアルバム';
       modal.style.display='flex';
@@ -509,7 +519,7 @@ function renderAlbums(){
 function toggleGallery(index) {
   const gallery = document.getElementById(`gallery-${index}`);
   const btn = document.getElementById(`toggle-btn-${index}`);
-  
+   
   if (gallery.style.display === 'grid') {
     gallery.style.display = 'none';
     btn.innerText = `📸 ${albumData[currentPrefecture][index].files.length}件の思い出をプレビュー`;
@@ -573,7 +583,7 @@ async function handleUploadSequence(albumIndex, event) {
   if(files.length === 0) return;
 
   const currentToken = gapi.client.getToken();
-  
+   
   if (!currentToken || !currentToken.access_token) {
     showAlert("Google Driveへの接続を確認しています。ポップアップが表示されたら許可してください。");
     
@@ -656,7 +666,6 @@ async function uploadToDrive(file, albumIndex, targetFolderId){
     resource:{ role:'reader', type:'anyone' }
   });
 
-  // 改善：ブロック対策として、ファイルIDをオブジェクト内に独立して保存
   albumData[currentPrefecture][albumIndex].files.push({
     id: data.id, 
     type: file.type
@@ -673,11 +682,9 @@ function renderGallery(index){
   const files = albumData[currentPrefecture][index].files || [];
 
   files.forEach(file => {
-    // 過去データ（URL形式）でも新データ（ID形式）でも動くように互換処理
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
-    // 【最重要変更】外部アクセス規制を回避する、Google提供のサムネイルURLを生成
     const thumbUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`;
     const origUrl = `https://drive.google.com/uc?id=${fileId}`;
 
@@ -687,7 +694,6 @@ function renderGallery(index){
     if(file.type && file.type.startsWith('image')){
       itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出写真" onclick="window.open('${origUrl}', '_blank')">`;
     }else{
-      // 動画の場合、Driveのサムネイルは静止画になりますが、クリックで大画面再生可能
       itemDiv.innerHTML = `<img src="${thumbUrl}" alt="思い出動画" onclick="window.open('${origUrl}', '_blank')">`;
     }
     gallery.appendChild(itemDiv);
@@ -703,27 +709,46 @@ function showAlert(message){
 
 window.addEventListener('load', () => {
   const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
   const userInfo = document.getElementById('userInfo');
 
+  // 💡 お二人の理想の仕様を100%確実に実現する切り替えロジック
   window.onAuthStateChanged(window.auth, async (user)=>{
     if(user){
-      document.getElementById('userInfo').innerText = 'ログイン済み';
+      userInfo.innerText = 'ログイン済み';
+      loginBtn.style.display = 'none';         // 👈 ログインボタンの表示を完全に消す
+      logoutBtn.style.display = 'inline-block'; // 👈 代わりにログアウトボタンのみを表示
       await loadAlbums();
     }else{
-      document.getElementById('userInfo').innerText = '未ログイン';
+      userInfo.innerText = '未ログイン';
+      loginBtn.style.display = 'inline-block'; // 👈 ログインボタンのみを表示（未ログイン状態を認識できる）
+      logoutBtn.style.display = 'none';        // 👈 ログアウトボタンは完全に不要（非表示）
+      albumData = {};                          // ログアウト時は安全にデータをクリア
+      paintPrefecture();                       // 地図の色もクリア
     }
   });
 
+  // ログイン処理
   loginBtn.addEventListener('click', async () => {
     try{
       const provider = new window.GoogleAuthProvider();
       const result = await window.signInWithPopup(window.auth, provider);
-      userInfo.innerText = 'ログイン済み';
       tokenClient.requestAccessToken({ prompt:'consent' });
       showAlert('ログイン成功');
     }catch(err){
       console.error(err);
       showAlert('ログイン失敗: ' + err.message);
+    }
+  });
+
+  // ログアウト処理
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await window.signOut(window.auth);
+      showAlert('ログアウトしました');
+    } catch (err) {
+      console.error(err);
+      showAlert('ログアウト失敗: ' + err.message);
     }
   });
 });
