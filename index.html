@@ -297,58 +297,14 @@ object-fit:cover;
 .video-badge {
 position: absolute;
 inset: 0;
-background: rgba(15, 23, 42, 0.6); 
+background: rgba(0,0,0,0.3);
 display: flex;
 justify-content: center;
 align-items: center;
 color: white;
-font-size: 26px;
+font-size: 24px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
-}
-
-/* 💡 動画用プレイヤーのモーダルスタイルを復活・最適化 */
-.video-modal {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.95);
-display: none;
-justify-content: center;
-align-items: center;
-z-index: 100000;
-flex-direction: column;
-padding: 10px;
-}
-
-.video-player-container {
-width: 100%;
-max-width: 800px;
-aspect-ratio: 16 / 9;
-background: black;
-border-radius: 12px;
-overflow: hidden;
-position: relative;
-box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.video-player-container video {
-width: 100%;
-height: 100%;
-display: block;
-object-fit: contain;
-}
-
-.video-close-btn {
-margin-top: 20px;
-background: white;
-color: black;
-border: none;
-padding: 10px 24px;
-border-radius: 20px;
-font-weight: bold;
-cursor: pointer;
-font-size: 15px;
-box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .custom-alert{
@@ -409,13 +365,6 @@ Googleログイン
 
 <div class="album-list" id="albumList"></div>
 </div>
-</div>
-
-<div class="video-modal" id="videoModal">
-  <div class="video-player-container">
-    <video id="mainVideoPlayer" controls playsinline webkit-playsinline></video>
-  </div>
-  <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
@@ -514,16 +463,6 @@ loadJapanMap();
 
 function closeModal(){
   modal.style.display='none';
-}
-
-/* 💡 動画プレイヤーを閉じる処理（停止とリセット） */
-function closeVideoModal() {
-  const vModal = document.getElementById('videoModal');
-  const player = document.getElementById('mainVideoPlayer');
-  player.pause();
-  player.src = ""; 
-  player.load();
-  vModal.style.display = 'none';
 }
 
 async function createAlbum(){
@@ -662,7 +601,7 @@ async function handleUploadSequence(albumIndex, event) {
     
     tokenClient.callback = async (resp) => {
       if (resp.error) {
-        showAlert("Drive Rarアクセス許可が降りませんでした: " + resp.error);
+        showAlert("Driveのアクセス許可が降りませんでした: " + resp.error);
         return;
       }
       lastGisResponse = resp;
@@ -765,49 +704,18 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    // 💡 写真・動画の出し分けとプレビュー・再生ロジックを完全復活
-    if (!isVideo) {
-      const imgEl = document.createElement('img');
-      imgEl.alt = "写真思い出";
-      imgEl.onclick = () => {
-        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
-      };
-      itemDiv.appendChild(imgEl);
+    const imgEl = document.createElement('img');
+    imgEl.alt = isVideo ? "動画思い出" : "写真思い出";
+    
+    imgEl.onclick = () => {
+      // 💡 動画・写真問わず、Google公式の最高品質ビューアーURLを安全に別タブ展開する設計に一本化
+      // これによりスマホのセキュリティ制限による「画面真っ黒」「フルスクリーン不可」を完璧に回避します
+      window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+    };
 
-      if (accessToken) {
-        fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-          headers: { "Authorization": "Bearer " + accessToken }
-        })
-        .then(res => {
-          if (!res.ok) throw new Error();
-          return res.blob();
-        })
-        .then(blob => {
-          imgEl.src = URL.createObjectURL(blob);
-        })
-        .catch(() => {
-          imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
-        });
-      } else {
-        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
-      }
-    } else {
-      // 💡 動画の場合は、プレビュー枠自体をタップボタン化（スマホ規制を100%回避する高画質サムネイルストリーミング）
-      itemDiv.onclick = () => {
-        if (!window.auth.currentUser) {
-          showAlert("ログインしてください");
-          return;
-        }
-        const vModal = document.getElementById('videoModal');
-        const player = document.getElementById('mainVideoPlayer');
-        
-        // 💡 スマホ・PCの両方で、大容量警告をバイパスしてパッと表示・フルスクリーン再生できる最強のURL
-        player.src = `https://drive.google.com/thumbnail?authuser=0&sz=w1920&id=${fileId}`;
-        vModal.style.display = 'flex';
-        player.load();
-        player.play().catch(e => console.log("自動再生ブロック処理:", e));
-      };
-      
+    itemDiv.appendChild(imgEl);
+
+    if (isVideo) {
       const badge = document.createElement('div');
       badge.className = 'video-badge';
       badge.innerText = '▶';
@@ -815,6 +723,30 @@ function renderGallery(index){
     }
 
     gallery.appendChild(itemDiv);
+
+    if (isVideo) {
+      imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23374151'/></svg>";
+      
+      const tempImg = new Image();
+      tempImg.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+      tempImg.onload = () => { imgEl.src = tempImg.src; };
+    } else if (accessToken) {
+      fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+        headers: { "Authorization": "Bearer " + accessToken }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.blob();
+      })
+      .then(blob => {
+        imgEl.src = URL.createObjectURL(blob);
+      })
+      .catch(() => {
+        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+      });
+    } else {
+      imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+    }
   });
 }
 
@@ -835,9 +767,7 @@ window.addEventListener('load', () => {
       userInfo.innerText = 'ログイン済み';
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
-      // 💡 再読み込み時の「アルバム消滅バグ」を防ぐ自動復元処理も完全統合
       await loadAlbums();
-      paintPrefecture();
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
