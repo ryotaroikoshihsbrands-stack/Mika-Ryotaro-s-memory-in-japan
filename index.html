@@ -686,19 +686,19 @@ function renderGallery(index){
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
-    const origUrl = `https://drive.google.com/uc?id=${fileId}`;
+    // 💡 【動画対応の変更点】画像も動画も、安全にGoogle提供のプレイヤー/プレビュー画面で開くURLに変更
+    const viewUrl = "https://drive.google.com/file/d/" + fileId + "/view";
 
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
     const imgEl = document.createElement('img');
     imgEl.alt = "思い出";
-    imgEl.onclick = () => window.open(origUrl, '_blank');
+    imgEl.onclick = () => window.open(viewUrl, '_blank');
     itemDiv.appendChild(imgEl);
     gallery.appendChild(itemDiv);
 
     if (accessToken) {
-      // 💡 構文をJavaScriptの標準的なルールに正しく修正しました
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { "Authorization": "Bearer " + accessToken }
       })
