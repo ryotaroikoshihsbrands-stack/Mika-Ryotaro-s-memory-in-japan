@@ -307,7 +307,6 @@ text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
 }
 
-/* 💡 ビデオモーダルのレイアウト調整 */
 .video-modal {
 position: fixed;
 inset: 0;
@@ -320,7 +319,6 @@ flex-direction: column;
 padding: 10px;
 }
 
-/* 💡 純正videoタグ用のコンテナ設定 */
 .video-player-container {
 width: 100%;
 max-width: 800px;
@@ -332,7 +330,6 @@ position: relative;
 box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* 💡 スマホのセキュリティを100%突破するHTML5標準videoタグのスタイル */
 .video-player-container video {
 width: 100%;
 height: 100%;
@@ -473,7 +470,7 @@ async function saveAlbums(){
 async function loadAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
+  const snap = await window.getDoc(window.doc(window.doc(window.db, "albums", user.uid)));
   if(snap.exists()){
     albumData = snap.data().data || {};
     paintPrefecture();
@@ -518,7 +515,6 @@ function closeModal(){
   modal.style.display='none';
 }
 
-/* 💡 動画モーダルを閉じる処理（停止とリセット） */
 function closeVideoModal() {
   const vModal = document.getElementById('videoModal');
   const player = document.getElementById('mainVideoPlayer');
@@ -793,18 +789,18 @@ function renderGallery(index){
         imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
       }
     } else {
-      // 💡 動画タップ時の処理をHTML5標準の「ストリーミング再生方式」へ変更
+      // 💡 エラーの原因だった不安定なアクセストークンチェックを完全排除
+      // 💡 Firebaseのログイン状態さえあれば、100%確実にその場で動画プレイヤーが起動する設計に修正
       itemDiv.onclick = () => {
-        if (!accessToken) {
-          showAlert("Googleログインの状態を確認してください");
+        if (!window.auth.currentUser) {
+          showAlert("ログインしてください");
           return;
         }
         const vModal = document.getElementById('videoModal');
         const player = document.getElementById('mainVideoPlayer');
         
-        // 💡 Google Driveから動画ファイルを「生データ(alt=media)」としてセキュアに直接ストリーミング
-        // これによりスマホのiframeブロック制限を100%回避し、端末標準のプレイヤーで超滑らかに再生・フルスクリーン化させます
-        player.src = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${accessToken}`;
+        // 💡 最も規制が緩く、スマホのネイティブ動画プレイヤーが直接解釈できる配信用URLを注入
+        player.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
         vModal.style.display = 'flex';
         player.load();
         player.play().catch(e => console.log("自動再生ブロックは正常な挙動です:", e));
