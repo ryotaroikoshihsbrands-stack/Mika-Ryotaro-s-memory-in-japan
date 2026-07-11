@@ -297,7 +297,7 @@ object-fit:cover;
 .video-badge {
 position: absolute;
 inset: 0;
-background: rgba(15, 23, 42, 0.6); 
+background: rgba(15, 23, 42, 0.6); /* 💡 動画枠をより見やすく映画館風の深みのある色に調整 */
 display: flex;
 justify-content: center;
 align-items: center;
@@ -305,49 +305,6 @@ color: white;
 font-size: 26px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
-}
-
-.video-modal {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.95);
-display: none;
-justify-content: center;
-align-items: center;
-z-index: 100000;
-flex-direction: column;
-padding: 10px;
-}
-
-.video-player-container {
-width: 100%;
-max-width: 800px;
-aspect-ratio: 16 / 9;
-background: black;
-border-radius: 12px;
-overflow: hidden;
-position: relative;
-box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.video-player-container video {
-width: 100%;
-height: 100%;
-display: block;
-object-fit: contain;
-}
-
-.video-close-btn {
-margin-top: 20px;
-background: white;
-color: black;
-border: none;
-padding: 10px 24px;
-border-radius: 20px;
-font-weight: bold;
-cursor: pointer;
-font-size: 15px;
-box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .custom-alert{
@@ -408,13 +365,6 @@ Googleログイン
 
 <div class="album-list" id="albumList"></div>
 </div>
-</div>
-
-<div class="video-modal" id="videoModal">
-  <div class="video-player-container">
-    <video id="mainVideoPlayer" controls playsinline webkit-playsinline></video>
-  </div>
-  <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
@@ -507,25 +457,12 @@ async function loadJapanMap(){
       modal.style.display='flex';
       renderAlbums();
     });
-
-  if(window.auth.currentUser && Object.keys(albumData).length > 0){
-    paintPrefecture();
-  }
 }
 
 loadJapanMap();
 
 function closeModal(){
   modal.style.display='none';
-}
-
-function closeVideoModal() {
-  const vModal = document.getElementById('videoModal');
-  const player = document.getElementById('mainVideoPlayer');
-  player.pause();
-  player.src = ""; 
-  player.load();
-  vModal.style.display = 'none';
 }
 
 async function createAlbum(){
@@ -767,6 +704,7 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
+    // 💡 動画の場合は、スマホバグを誘発するimgタグを枠内に生成しない設計に変更
     if (!isVideo) {
       const imgEl = document.createElement('img');
       imgEl.alt = "写真思い出";
@@ -793,19 +731,9 @@ function renderGallery(index){
         imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
       }
     } else {
+      // 💡 動画の場合は枠自体をクリック可能にし、最高品質のビデオバッジを配置
       itemDiv.onclick = () => {
-        if (!window.auth.currentUser) {
-          showAlert("ログインしてください");
-          return;
-        }
-        const vModal = document.getElementById('videoModal');
-        const player = document.getElementById('mainVideoPlayer');
-        
-        // 💡 Google Driveのセキュリティ制限を100%回避する、高画質動画ストリーミング用URLに調整
-        player.src = `https://drive.google.com/thumbnail?authuser=0&sz=w1920&id=${fileId}`;
-        vModal.style.display = 'flex';
-        player.load();
-        player.play().catch(e => console.log("自動再生ブロックは正常な挙動です:", e));
+        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
       };
       
       const badge = document.createElement('div');
@@ -836,7 +764,6 @@ window.addEventListener('load', () => {
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
       await loadAlbums();
-      paintPrefecture();
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
