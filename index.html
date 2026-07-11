@@ -279,7 +279,7 @@ height: 80px;
 overflow: hidden;
 border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-background: #374151; /* 動画読み込み失敗時も綺麗に見えるようダークグレーに変更 */
+background: #374151; 
 cursor: pointer;
 transition: transform 0.2s;
 }
@@ -305,50 +305,6 @@ color: white;
 font-size: 24px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
-}
-
-.video-modal {
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.85);
-display: none;
-justify-content: center;
-align-items: center;
-z-index: 100000;
-flex-direction: column;
-padding: 20px;
-}
-
-/* 💡 iframeプレイヤー用にアスペクト比を16:9に完全固定 */
-.video-player-container {
-width: 100%;
-max-width: 800px;
-aspect-ratio: 16 / 9;
-background: black;
-border-radius: 16px;
-overflow: hidden;
-position: relative;
-box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.video-player-container iframe {
-width: 100%;
-height: 100%;
-border: none;
-display: block;
-}
-
-.video-close-btn {
-margin-top: 20px;
-background: white;
-color: black;
-border: none;
-padding: 12px 30px;
-border-radius: 30px;
-font-weight: bold;
-cursor: pointer;
-font-size: 16px;
-box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .custom-alert{
@@ -409,13 +365,6 @@ Googleログイン
 
 <div class="album-list" id="albumList"></div>
 </div>
-</div>
-
-<div class="video-modal" id="videoModal">
-  <div class="video-player-container">
-    <iframe id="mainVideoPlayer" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-  </div>
-  <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
@@ -514,13 +463,6 @@ loadJapanMap();
 
 function closeModal(){
   modal.style.display='none';
-}
-
-function closeVideoModal() {
-  const vModal = document.getElementById('videoModal');
-  const player = document.getElementById('mainVideoPlayer');
-  player.src = ""; // 配信停止とメモリ解放
-  vModal.style.display = 'none';
 }
 
 async function createAlbum(){
@@ -766,16 +708,9 @@ function renderGallery(index){
     imgEl.alt = isVideo ? "動画思い出" : "写真思い出";
     
     imgEl.onclick = () => {
-      if (isVideo) {
-        const vModal = document.getElementById('videoModal');
-        const player = document.getElementById('mainVideoPlayer');
-        
-        // 💡 Google Drive公式のインタラクティブ埋め込みプレイヤーURLを設定（大容量警告を自動回避）
-        player.src = `https://drive.google.com/file/d/${fileId}/preview`;
-        vModal.style.display = 'flex';
-      } else {
-        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
-      }
+      // 💡 動画・写真問わず、Google公式の最高品質ビューアーURLを安全に別タブ展開する設計に一本化
+      // これによりスマホのセキュリティ制限による「画面真っ黒」「フルスクリーン不可」を完璧に回避します
+      window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
     };
 
     itemDiv.appendChild(imgEl);
@@ -790,7 +725,6 @@ function renderGallery(index){
     gallery.appendChild(itemDiv);
 
     if (isVideo) {
-      // 💡 動画サムネイル生成待ち対策：まずは確実な一時画像を設定し、裏で公式サムネイルを試行
       imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23374151'/></svg>";
       
       const tempImg = new Image();
