@@ -297,12 +297,12 @@ object-fit:cover;
 .video-badge {
 position: absolute;
 inset: 0;
-background: rgba(0,0,0,0.3);
+background: rgba(15, 23, 42, 0.6); /* 💡 動画枠をより見やすく映画館風の深みのある色に調整 */
 display: flex;
 justify-content: center;
 align-items: center;
 color: white;
-font-size: 24px;
+font-size: 26px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
 }
@@ -704,18 +704,38 @@ function renderGallery(index){
     const itemDiv = document.createElement('div');
     itemDiv.className = 'gallery-item';
 
-    const imgEl = document.createElement('img');
-    imgEl.alt = isVideo ? "動画思い出" : "写真思い出";
-    
-    imgEl.onclick = () => {
-      // 💡 動画・写真問わず、Google公式の最高品質ビューアーURLを安全に別タブ展開する設計に一本化
-      // これによりスマホのセキュリティ制限による「画面真っ黒」「フルスクリーン不可」を完璧に回避します
-      window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
-    };
+    // 💡 動画の場合は、スマホバグを誘発するimgタグを枠内に生成しない設計に変更
+    if (!isVideo) {
+      const imgEl = document.createElement('img');
+      imgEl.alt = "写真思い出";
+      imgEl.onclick = () => {
+        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+      };
+      itemDiv.appendChild(imgEl);
 
-    itemDiv.appendChild(imgEl);
-
-    if (isVideo) {
+      if (accessToken) {
+        fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+          headers: { "Authorization": "Bearer " + accessToken }
+        })
+        .then(res => {
+          if (!res.ok) throw new Error();
+          return res.blob();
+        })
+        .then(blob => {
+          imgEl.src = URL.createObjectURL(blob);
+        })
+        .catch(() => {
+          imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+        });
+      } else {
+        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+      }
+    } else {
+      // 💡 動画の場合は枠自体をクリック可能にし、最高品質のビデオバッジを配置
+      itemDiv.onclick = () => {
+        window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
+      };
+      
       const badge = document.createElement('div');
       badge.className = 'video-badge';
       badge.innerText = '▶';
@@ -723,30 +743,6 @@ function renderGallery(index){
     }
 
     gallery.appendChild(itemDiv);
-
-    if (isVideo) {
-      imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23374151'/></svg>";
-      
-      const tempImg = new Image();
-      tempImg.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
-      tempImg.onload = () => { imgEl.src = tempImg.src; };
-    } else if (accessToken) {
-      fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-        headers: { "Authorization": "Bearer " + accessToken }
-      })
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.blob();
-      })
-      .then(blob => {
-        imgEl.src = URL.createObjectURL(blob);
-      })
-      .catch(() => {
-        imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
-      });
-    } else {
-      imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
-    }
   });
 }
 
