@@ -279,7 +279,7 @@ height: 80px;
 overflow: hidden;
 border-radius: 8px;
 box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-background: #e5e7eb;
+background: #374151; /* 動画読み込み失敗時も綺麗に見えるようダークグレーに変更 */
 cursor: pointer;
 transition: transform 0.2s;
 }
@@ -297,17 +297,16 @@ object-fit:cover;
 .video-badge {
 position: absolute;
 inset: 0;
-background: rgba(0,0,0,0.2);
+background: rgba(0,0,0,0.3);
 display: flex;
 justify-content: center;
 align-items: center;
 color: white;
-font-size: 22px;
-text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+font-size: 24px;
+text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
 }
 
-/* 💡 インライン動画プレイヤー用のモーダルスタイルを追加 */
 .video-modal {
 position: fixed;
 inset: 0;
@@ -320,9 +319,11 @@ flex-direction: column;
 padding: 20px;
 }
 
+/* 💡 iframeプレイヤー用にアスペクト比を16:9に完全固定 */
 .video-player-container {
 width: 100%;
 max-width: 800px;
+aspect-ratio: 16 / 9;
 background: black;
 border-radius: 16px;
 overflow: hidden;
@@ -330,10 +331,11 @@ position: relative;
 box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.video-player-container video {
+.video-player-container iframe {
 width: 100%;
+height: 100%;
+border: none;
 display: block;
-max-height: 70vh;
 }
 
 .video-close-btn {
@@ -411,7 +413,7 @@ Googleログイン
 
 <div class="video-modal" id="videoModal">
   <div class="video-player-container">
-    <video id="mainVideoPlayer" controls playsinline></video>
+    <iframe id="mainVideoPlayer" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
   </div>
   <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
@@ -514,12 +516,10 @@ function closeModal(){
   modal.style.display='none';
 }
 
-// 💡 動画モーダルを閉じる処理
 function closeVideoModal() {
   const vModal = document.getElementById('videoModal');
   const player = document.getElementById('mainVideoPlayer');
-  player.pause(); // 再生をストップ
-  player.src = ""; // データをクリアしてメモリ解放
+  player.src = ""; // 配信停止とメモリ解放
   vModal.style.display = 'none';
 }
 
@@ -763,20 +763,17 @@ function renderGallery(index){
     itemDiv.className = 'gallery-item';
 
     const imgEl = document.createElement('img');
-    imgEl.alt = "思い出";
+    imgEl.alt = isVideo ? "動画思い出" : "写真思い出";
     
-    // 💡 タップ時の挙動を、アプリ内インラインプレイヤー起動に変更
     imgEl.onclick = () => {
       if (isVideo) {
         const vModal = document.getElementById('videoModal');
         const player = document.getElementById('mainVideoPlayer');
         
-        // Google Driveのストリーミング配信用Webリンクを流し込む
-        player.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        // 💡 Google Drive公式のインタラクティブ埋め込みプレイヤーURLを設定（大容量警告を自動回避）
+        player.src = `https://drive.google.com/file/d/${fileId}/preview`;
         vModal.style.display = 'flex';
-        player.play().catch(e => console.log("自動再生ブロックのハンドリング:", e));
       } else {
-        // 画像はこれまで通りきれいに公式ビューアーで開く
         window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
       }
     };
@@ -793,7 +790,12 @@ function renderGallery(index){
     gallery.appendChild(itemDiv);
 
     if (isVideo) {
-      imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+      // 💡 動画サムネイル生成待ち対策：まずは確実な一時画像を設定し、裏で公式サムネイルを試行
+      imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><rect width='80' height='80' fill='%23374151'/></svg>";
+      
+      const tempImg = new Image();
+      tempImg.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
+      tempImg.onload = () => { imgEl.src = tempImg.src; };
     } else if (accessToken) {
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { "Authorization": "Bearer " + accessToken }
