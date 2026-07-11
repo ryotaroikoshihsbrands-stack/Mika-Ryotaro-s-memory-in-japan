@@ -294,7 +294,6 @@ height:100%;
 object-fit:cover;
 }
 
-/* 💡 動画バッジ用のスタイルを追加 */
 .video-badge {
 position: absolute;
 inset: 0;
@@ -305,7 +304,7 @@ align-items: center;
 color: white;
 font-size: 22px;
 text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-pointer-events: none; /* クリックを通す */
+pointer-events: none;
 }
 
 .custom-alert{
@@ -700,7 +699,6 @@ function renderGallery(index){
     const fileId = file.id || (file.url ? file.url.split('id=')[1] : null);
     if (!fileId) return;
 
-    // 💡 ファイルのタイプ（MIME-Type）をチェックして動画かどうかを自動判定
     const isVideo = file.type && file.type.startsWith('video/');
 
     const itemDiv = document.createElement('div');
@@ -709,20 +707,17 @@ function renderGallery(index){
     const imgEl = document.createElement('img');
     imgEl.alt = "思い出";
     
-    // 💡 クリック（タップ）時のURLを動画と画像で最適化して分岐
     imgEl.onclick = () => {
       if (isVideo) {
-        // 動画の場合はログイン不要の直接再生用ストリーミングURLを開く
-        window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, '_blank');
+        // 💡 スマホの「表示」でもフリーズせず、PCでも安全に開くオープンストリーミング用URLに修正
+        window.open(`https://docs.google.com/uc?export=open&id=${fileId}`, '_blank');
       } else {
-        // 画像の場合は綺麗に見える公式ビューアー画面を開く
         window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
       }
     };
 
     itemDiv.appendChild(imgEl);
 
-    // 💡 動画の場合は枠の上に「▶」のバッジマークを重ねて配置
     if (isVideo) {
       const badge = document.createElement('div');
       badge.className = 'video-badge';
@@ -732,12 +727,9 @@ function renderGallery(index){
 
     gallery.appendChild(itemDiv);
 
-    // 💡 プレビューの読み込み処理を動画・画像で切り替え（PCフリーズ＆スマホ制限対策）
     if (isVideo) {
-      // 動画のサムネイルは規制が緩いため、大容量エラー回避を兼ねてダイレクトに読み込み（PC・スマホ両対応）
       imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
     } else if (accessToken) {
-      // 画像はこれまで通りサードパーティブロックを突破するため裏フェッチ
       fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
         headers: { "Authorization": "Bearer " + accessToken }
       })
