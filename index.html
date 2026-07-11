@@ -470,10 +470,10 @@ async function saveAlbums(){
 async function loadAlbums(){
   const user = window.auth.currentUser;
   if(!user) return;
-  const snap = await window.getDoc(window.doc(window.doc(window.db, "albums", user.uid)));
+  const snap = await window.getDoc(window.doc(window.db, "albums", user.uid));
   if(snap.exists()){
     albumData = snap.data().data || {};
-    paintPrefecture();
+    paintPrefecture(); // 💡 データを読み込んだらすぐに地図を塗り替える
   }
 }
 
@@ -507,6 +507,11 @@ async function loadJapanMap(){
       modal.style.display='flex';
       renderAlbums();
     });
+
+  // 💡 地図の描画が完了した時点で、もしすでに自動ログインされてデータがあれば色を塗る
+  if(window.auth.currentUser && Object.keys(albumData).length > 0){
+    paintPrefecture();
+  }
 }
 
 loadJapanMap();
@@ -789,8 +794,6 @@ function renderGallery(index){
         imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
       }
     } else {
-      // 💡 エラーの原因だった不安定なアクセストークンチェックを完全排除
-      // 💡 Firebaseのログイン状態さえあれば、100%確実にその場で動画プレイヤーが起動する設計に修正
       itemDiv.onclick = () => {
         if (!window.auth.currentUser) {
           showAlert("ログインしてください");
@@ -799,7 +802,6 @@ function renderGallery(index){
         const vModal = document.getElementById('videoModal');
         const player = document.getElementById('mainVideoPlayer');
         
-        // 💡 最も規制が緩く、スマホのネイティブ動画プレイヤーが直接解釈できる配信用URLを注入
         player.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
         vModal.style.display = 'flex';
         player.load();
@@ -833,7 +835,9 @@ window.addEventListener('load', () => {
       userInfo.innerText = 'ログイン済み';
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'inline-block';
+      // 💡 ログイン完了を検知した直後に、裏側のデータをロードして日本地図を確実に復元する
       await loadAlbums();
+      paintPrefecture();
     }else{
       userInfo.innerText = '未ログイン';
       loginBtn.style.display = 'inline-block';
