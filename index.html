@@ -307,6 +307,48 @@ text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 pointer-events: none;
 }
 
+/* 💡 インライン動画プレイヤー用のモーダルスタイルを追加 */
+.video-modal {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.85);
+display: none;
+justify-content: center;
+align-items: center;
+z-index: 100000;
+flex-direction: column;
+padding: 20px;
+}
+
+.video-player-container {
+width: 100%;
+max-width: 800px;
+background: black;
+border-radius: 16px;
+overflow: hidden;
+position: relative;
+box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.video-player-container video {
+width: 100%;
+display: block;
+max-height: 70vh;
+}
+
+.video-close-btn {
+margin-top: 20px;
+background: white;
+color: black;
+border: none;
+padding: 12px 30px;
+border-radius: 30px;
+font-weight: bold;
+cursor: pointer;
+font-size: 16px;
+box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
 .custom-alert{
 position:fixed;
 bottom:30px;
@@ -365,6 +407,13 @@ Googleログイン
 
 <div class="album-list" id="albumList"></div>
 </div>
+</div>
+
+<div class="video-modal" id="videoModal">
+  <div class="video-player-container">
+    <video id="mainVideoPlayer" controls playsinline></video>
+  </div>
+  <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
 
 <div class="custom-alert" id="customAlert"></div>
@@ -463,6 +512,15 @@ loadJapanMap();
 
 function closeModal(){
   modal.style.display='none';
+}
+
+// 💡 動画モーダルを閉じる処理
+function closeVideoModal() {
+  const vModal = document.getElementById('videoModal');
+  const player = document.getElementById('mainVideoPlayer');
+  player.pause(); // 再生をストップ
+  player.src = ""; // データをクリアしてメモリ解放
+  vModal.style.display = 'none';
 }
 
 async function createAlbum(){
@@ -707,11 +765,18 @@ function renderGallery(index){
     const imgEl = document.createElement('img');
     imgEl.alt = "思い出";
     
+    // 💡 タップ時の挙動を、アプリ内インラインプレイヤー起動に変更
     imgEl.onclick = () => {
       if (isVideo) {
-        // 💡 スマホの「表示」でもフリーズせず、PCでも安全に開くオープンストリーミング用URLに修正
-        window.open(`https://docs.google.com/uc?export=open&id=${fileId}`, '_blank');
+        const vModal = document.getElementById('videoModal');
+        const player = document.getElementById('mainVideoPlayer');
+        
+        // Google Driveのストリーミング配信用Webリンクを流し込む
+        player.src = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        vModal.style.display = 'flex';
+        player.play().catch(e => console.log("自動再生ブロックのハンドリング:", e));
       } else {
+        // 画像はこれまで通りきれいに公式ビューアーで開く
         window.open(`https://drive.google.com/file/d/${fileId}/view`, '_blank');
       }
     };
