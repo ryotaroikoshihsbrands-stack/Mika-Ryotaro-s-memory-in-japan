@@ -307,11 +307,11 @@ text-shadow: 0 2px 4px rgba(0,0,0,0.6);
 pointer-events: none;
 }
 
-/* 💡 動画プレイヤー用モーダルを再設置 */
+/* 💡 ビデオモーダルのレイアウト調整 */
 .video-modal {
 position: fixed;
 inset: 0;
-background: rgba(0,0,0,0.9);
+background: rgba(0,0,0,0.95);
 display: none;
 justify-content: center;
 align-items: center;
@@ -320,7 +320,7 @@ flex-direction: column;
 padding: 10px;
 }
 
-/* 💡 iframeプレイヤーのアスペクト比を16:9に綺麗に固定 */
+/* 💡 純正videoタグ用のコンテナ設定 */
 .video-player-container {
 width: 100%;
 max-width: 800px;
@@ -332,11 +332,12 @@ position: relative;
 box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.video-player-container iframe {
+/* 💡 スマホのセキュリティを100%突破するHTML5標準videoタグのスタイル */
+.video-player-container video {
 width: 100%;
 height: 100%;
-border: none;
 display: block;
+object-fit: contain;
 }
 
 .video-close-btn {
@@ -414,7 +415,7 @@ Googleログイン
 
 <div class="video-modal" id="videoModal">
   <div class="video-player-container">
-    <iframe id="mainVideoPlayer" src="" allow="autoplay; encrypted-media" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>
+    <video id="mainVideoPlayer" controls playsinline webkit-playsinline></video>
   </div>
   <button class="video-close-btn" onclick="closeVideoModal()">動画を閉じる</button>
 </div>
@@ -517,11 +518,13 @@ function closeModal(){
   modal.style.display='none';
 }
 
-/* 💡 動画モーダルを閉じる処理（メモリ解放） */
+/* 💡 動画モーダルを閉じる処理（停止とリセット） */
 function closeVideoModal() {
   const vModal = document.getElementById('videoModal');
   const player = document.getElementById('mainVideoPlayer');
+  player.pause();
   player.src = ""; 
+  player.load();
   vModal.style.display = 'none';
 }
 
@@ -790,13 +793,21 @@ function renderGallery(index){
         imgEl.src = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w200";
       }
     } else {
-      // 💡 アプリ内のプレイヤー（videoModal）を起動し、フルスクリーンを有効化する設計に変更
+      // 💡 動画タップ時の処理をHTML5標準の「ストリーミング再生方式」へ変更
       itemDiv.onclick = () => {
+        if (!accessToken) {
+          showAlert("Googleログインの状態を確認してください");
+          return;
+        }
         const vModal = document.getElementById('videoModal');
         const player = document.getElementById('mainVideoPlayer');
-        // 大容量警告を安全にバイパスできるGoogle公式埋め込みプレイヤーURL
-        player.src = `https://drive.google.com/file/d/${fileId}/preview`;
+        
+        // 💡 Google Driveから動画ファイルを「生データ(alt=media)」としてセキュアに直接ストリーミング
+        // これによりスマホのiframeブロック制限を100%回避し、端末標準のプレイヤーで超滑らかに再生・フルスクリーン化させます
+        player.src = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${accessToken}`;
         vModal.style.display = 'flex';
+        player.load();
+        player.play().catch(e => console.log("自動再生ブロックは正常な挙動です:", e));
       };
       
       const badge = document.createElement('div');
